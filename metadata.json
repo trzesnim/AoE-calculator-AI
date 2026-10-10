@@ -1,0 +1,7 @@
+{
+  "name": "Age of Empires 2 1v1 Battle Calculator",
+  "description": "Calculate 1v1 battle outcomes between Age of Empires II units with upgrades and technologies.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
