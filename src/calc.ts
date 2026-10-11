@@ -1,5 +1,5 @@
 import { UnitData, UnitUpgrades, ComparisonResult } from './types';
-import { CIVILIZATIONS } from './civs';
+import { CIVILIZATIONS, isUnitAvailableForCiv } from './civs';
 
 export function computeBonusDmg(u1: UnitData, u2: UnitData, defenderReduction: number = 0): number {
   if (!u2.armor_class || !u1.attack_bonus) {
@@ -400,6 +400,37 @@ export function compareUnits(
   upgrades1: UnitUpgrades,
   upgrades2: UnitUpgrades
 ): ComparisonResult {
+  // Check Civilization Availability FIRST!
+  const u1Available = isUnitAvailableForCiv(unit1.name, upgrades1.civilization);
+  const u2Available = isUnitAvailableForCiv(unit2.name, upgrades2.civilization);
+
+  if (!u1Available || !u2Available) {
+    const errorMsg =
+      !u1Available && !u2Available
+        ? `${upgrades1.civilization} does not get access to ${unit1.name}.\n${upgrades2.civilization} does not get access to ${unit2.name}.`
+        : !u1Available
+        ? `${upgrades1.civilization} does not get access to ${unit1.name}.`
+        : `${upgrades2.civilization} does not get access to ${unit2.name}.`;
+
+    return {
+      unit1Name: unit1.name,
+      unit2Name: unit2.name,
+      hits1: 0,
+      time1: 0,
+      hits2: 0,
+      time2: 0,
+      rawText: errorMsg,
+      winner: 'error',
+      error: errorMsg,
+      unit1CanAttack: false,
+      unit2CanAttack: false,
+      unit1DamagePerHit: 0,
+      unit2DamagePerHit: 0,
+      unit1BonusDmg: 0,
+      unit2BonusDmg: 0,
+    };
+  }
+
   const canAttack1 = hasAttack(unit1, upgrades1);
   const canAttack2 = hasAttack(unit2, upgrades2);
 
@@ -428,7 +459,7 @@ export function compareUnits(
     const sim2 = simulateAttack(unit2, unit1, upgrades2, upgrades1);
     const text = `${unit1.name} does not attack.\n\n${unit2.name} takes ${
       sim2.hits
-    } hits and ${sim2.time.toFixed(2)} seconds to kill ${unit1.name}\n\n${unit2.name} wins 1v1 (uncontested)`;
+    } hits and ${sim2.time.toFixed(2)} seconds to kill ${unit1.name}\n\n${unit2.name} (${upgrades2.civilization}) wins 1v1 (uncontested)`;
 
     return {
       unit1Name: unit1.name,
@@ -454,7 +485,7 @@ export function compareUnits(
     const sim1 = simulateAttack(unit1, unit2, upgrades1, upgrades2);
     const text = `${unit2.name} does not attack.\n\n${unit1.name} takes ${
       sim1.hits
-    } hits and ${sim1.time.toFixed(2)} seconds to kill ${unit2.name}\n\n${unit1.name} wins 1v1 (uncontested)`;
+    } hits and ${sim1.time.toFixed(2)} seconds to kill ${unit2.name}\n\n${unit1.name} (${upgrades1.civilization}) wins 1v1 (uncontested)`;
 
     return {
       unit1Name: unit1.name,
@@ -479,28 +510,28 @@ export function compareUnits(
   const sim1 = simulateAttack(unit1, unit2, upgrades1, upgrades2);
   const sim2 = simulateAttack(unit2, unit1, upgrades2, upgrades1);
 
-  const text = `${unit1.name} takes ${sim1.hits} hits and ${sim1.time.toFixed(
+  const text = `${unit1.name} (${upgrades1.civilization}) takes ${sim1.hits} hits and ${sim1.time.toFixed(
     2
-  )} seconds to kill ${unit2.name}\n\n${unit2.name} takes ${sim2.hits} hits and ${sim2.time.toFixed(
+  )} seconds to kill ${unit2.name} (${upgrades2.civilization})\n\n${unit2.name} (${upgrades2.civilization}) takes ${sim2.hits} hits and ${sim2.time.toFixed(
     2
-  )} seconds to kill ${unit1.name}`;
+  )} seconds to kill ${unit1.name} (${upgrades1.civilization})`;
 
   let winner = 'tie';
   let verdict = 'Both units takes the same time to kill each other';
 
   if (sim1.time < sim2.time) {
     winner = 'unit1';
-    verdict = `${unit1.name} wins 1v1`;
+    verdict = `${unit1.name} (${upgrades1.civilization}) wins 1v1`;
   } else if (sim2.time < sim1.time) {
     winner = 'unit2';
-    verdict = `${unit2.name} wins 1v1`;
+    verdict = `${unit2.name} (${upgrades2.civilization}) wins 1v1`;
   } else {
     if (sim1.hits < sim2.hits) {
       winner = 'unit1';
-      verdict = `${unit1.name} wins 1v1 (fewer hits required)`;
+      verdict = `${unit1.name} (${upgrades1.civilization}) wins 1v1 (fewer hits required)`;
     } else if (sim2.hits < sim1.hits) {
       winner = 'unit2';
-      verdict = `${unit2.name} wins 1v1 (fewer hits required)`;
+      verdict = `${unit2.name} (${upgrades2.civilization}) wins 1v1 (fewer hits required)`;
     }
   }
 

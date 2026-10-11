@@ -58,6 +58,16 @@ export const ALL_CIV_TEAM_UNITS = [
   'Elite Kipchak',
 ];
 
+export function unitStatsDependOnAge(unitName: string): boolean {
+  const norm = unitName.toLowerCase();
+  return (
+    norm.includes('scout cavalry') ||
+    norm.includes('eagle scout') ||
+    norm.includes('flemish militia') ||
+    norm.includes('serjeant')
+  );
+}
+
 export const CIVILIZATIONS: Record<string, CivData> = {
   Generic: {
     name: 'Generic',
@@ -80,7 +90,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Armenians: {
     name: 'Armenians',
     uniqueUnits: ['Composite Bowman'],
-    disabledUnits: ['Knight', 'Cavalier', 'Paladin', 'Camel Rider', 'Heavy Camel Rider'],
+    disabledUnits: ['Knight', 'Cavalier', 'Paladin', 'Camel Rider', 'Heavy Camel Rider', 'Imperial Camel Rider', 'Hussar'],
     maxMeleeAttack: 3,
     maxRangedAttack: 2,
     maxArcherArmor: 3,
@@ -109,7 +119,12 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Aztecs: {
     name: 'Aztecs',
     uniqueUnits: ['Jaguar Warrior'],
-    disabledUnits: ['Scout Cavalry', 'Light Cavalry', 'Hussar', 'Knight', 'Cavalier', 'Paladin', 'Camel Rider'],
+    disabledUnits: [
+      'Scout Cavalry', 'Light Cavalry', 'Hussar', 'Winged Hussar',
+      'Knight', 'Cavalier', 'Paladin', 'Camel Rider', 'Heavy Camel Rider',
+      'Imperial Camel Rider', 'Steppe Lancer', 'Elite Steppe Lancer',
+      'Battle Elephant', 'Elite Battle Elephant'
+    ],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -138,7 +153,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Bengalis: {
     name: 'Bengalis',
     uniqueUnits: ['Ratha'],
-    disabledUnits: ['Knight', 'Cavalier', 'Paladin', 'Camel Rider'],
+    disabledUnits: ['Knight', 'Cavalier', 'Paladin', 'Camel Rider', 'Heavy Camel Rider', 'Hussar'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -199,7 +214,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Bohemians: {
     name: 'Bohemians',
     uniqueUnits: ['Hussite Wagon', 'Houfnice'],
-    disabledUnits: ['Paladin', 'Bloodlines', 'Hussar'],
+    disabledUnits: ['Paladin', 'Hussar', 'Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 2,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -231,7 +246,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Britons: {
     name: 'Britons',
     uniqueUnits: ['Longbowman'],
-    disabledUnits: ['Paladin', 'Camel Rider', 'Bloodlines', 'Thumb Ring'],
+    disabledUnits: ['Paladin', 'Camel Rider', 'Heavy Camel Rider', 'Hussar'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -258,7 +273,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Bulgarians: {
     name: 'Bulgarians',
     uniqueUnits: ['Konnik'],
-    disabledUnits: ['Paladin', 'Crossbowman', 'Arbalester', 'Hand Cannoneer', 'Camel Rider'],
+    disabledUnits: ['Paladin', 'Crossbowman', 'Arbalester', 'Hand Cannoneer', 'Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 2,
@@ -297,7 +312,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Burgundians: {
     name: 'Burgundians',
     uniqueUnits: ['Coustillier', 'Flemish Militia'],
-    disabledUnits: ['Camel Rider', 'Bloodlines', 'Arbalester', 'Ring Archer Armor'],
+    disabledUnits: ['Camel Rider', 'Heavy Camel Rider', 'Arbalester'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 2,
@@ -315,7 +330,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Burmese: {
     name: 'Burmese',
     uniqueUnits: ['Arambai'],
-    disabledUnits: ['Paladin', 'Arbalester', 'Camel Rider', 'Leather Archer Armor', 'Ring Archer Armor'],
+    disabledUnits: ['Paladin', 'Arbalester', 'Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 1,
@@ -361,7 +376,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Byzantines: {
     name: 'Byzantines',
     uniqueUnits: ['Cataphract'],
-    disabledUnits: ['Bloodlines', 'Blast Furnace', 'Parthian Tactics'],
+    disabledUnits: ['Heavy Scorpion'],
     maxMeleeAttack: 2,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -390,7 +405,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Celts: {
     name: 'Celts',
     uniqueUnits: ['Woad Raider'],
-    disabledUnits: ['Bloodlines', 'Bracer', 'Ring Archer Armor', 'Plate Barding Armor'],
+    disabledUnits: ['Arbalester', 'Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 3,
     maxRangedAttack: 2,
     maxArcherArmor: 2,
@@ -408,7 +423,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Chinese: {
     name: 'Chinese',
     uniqueUnits: ['Chu Ko Nu'],
-    disabledUnits: ['Paladin', 'Hussar', 'Hand Cannoneer', 'Parthian Tactics'],
+    disabledUnits: ['Paladin', 'Hussar', 'Hand Cannoneer'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -437,7 +452,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Cumans: {
     name: 'Cumans',
     uniqueUnits: ['Kipchak'],
-    disabledUnits: ['Bracer', 'Arbalester', 'Heavy Camel Rider', 'Illumination'],
+    disabledUnits: ['Arbalester', 'Heavy Camel Rider'],
     maxMeleeAttack: 3,
     maxRangedAttack: 2,
     maxArcherArmor: 3,
@@ -455,7 +470,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Dravidians: {
     name: 'Dravidians',
     uniqueUnits: ['Urumi Swordsman'],
-    disabledUnits: ['Knight', 'Cavalier', 'Paladin', 'Bloodlines', 'Camel Rider'],
+    disabledUnits: ['Knight', 'Cavalier', 'Paladin', 'Camel Rider', 'Heavy Camel Rider', 'Hussar'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -484,7 +499,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Ethiopians: {
     name: 'Ethiopians',
     uniqueUnits: ['Shotel Warrior'],
-    disabledUnits: ['Paladin', 'Plate Barding Armor', 'Bloodlines', 'Parthian Tactics'],
+    disabledUnits: ['Paladin', 'Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -507,7 +522,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Franks: {
     name: 'Franks',
     uniqueUnits: ['Throwing Axeman'],
-    disabledUnits: ['Arbalester', 'Bloodlines', 'Camel Rider', 'Ring Archer Armor'],
+    disabledUnits: ['Arbalester', 'Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 2,
@@ -530,7 +545,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Georgians: {
     name: 'Georgians',
     uniqueUnits: ['Monaspa'],
-    disabledUnits: ['Paladin', 'Arbalester', 'Camel Rider'],
+    disabledUnits: ['Paladin', 'Arbalester', 'Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 3,
     maxRangedAttack: 2,
     maxArcherArmor: 3,
@@ -548,7 +563,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Goths: {
     name: 'Goths',
     uniqueUnits: ['Huskarl'],
-    disabledUnits: ['Paladin', 'Arbalester', 'Plate Barding Armor', 'Plate Mail Armor'],
+    disabledUnits: ['Paladin', 'Arbalester', 'Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -623,7 +638,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Huns: {
     name: 'Huns',
     uniqueUnits: ['Tarkan'],
-    disabledUnits: ['Arbalester', 'Champion', 'Plate Mail Armor', 'Onager', 'Siege Onager'],
+    disabledUnits: ['Arbalester', 'Champion', 'Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -652,7 +667,11 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Incas: {
     name: 'Incas',
     uniqueUnits: ['Kamayuk', 'Slinger'],
-    disabledUnits: ['Scout Cavalry', 'Knight', 'Camel Rider'],
+    disabledUnits: [
+      'Scout Cavalry', 'Light Cavalry', 'Hussar', 'Winged Hussar',
+      'Knight', 'Cavalier', 'Paladin', 'Camel Rider', 'Heavy Camel Rider',
+      'Battle Elephant', 'Steppe Lancer'
+    ],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -685,7 +704,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Italians: {
     name: 'Italians',
     uniqueUnits: ['Genoese Crossbowman', 'Condottiero'],
-    disabledUnits: ['Paladin', 'Camel Rider', 'Halberdier'],
+    disabledUnits: ['Paladin', 'Camel Rider', 'Heavy Camel Rider', 'Halberdier'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -715,7 +734,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Japanese: {
     name: 'Japanese',
     uniqueUnits: ['Samurai'],
-    disabledUnits: ['Paladin', 'Camel Rider', 'Plate Barding Armor'],
+    disabledUnits: ['Paladin', 'Camel Rider', 'Heavy Camel Rider', 'Hussar'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -738,7 +757,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Khmer: {
     name: 'Khmer',
     uniqueUnits: ['Ballista Elephant'],
-    disabledUnits: ['Paladin', 'Champion', 'Thumb Ring'],
+    disabledUnits: ['Paladin', 'Champion', 'Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -756,7 +775,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Koreans: {
     name: 'Koreans',
     uniqueUnits: ['War Wagon', 'Turtle Ship'],
-    disabledUnits: ['Paladin', 'Bloodlines', 'Camel Rider', 'Blast Furnace'],
+    disabledUnits: ['Paladin', 'Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 2,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -774,7 +793,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Lithuanians: {
     name: 'Lithuanians',
     uniqueUnits: ['Leitis', 'Winged Hussar'],
-    disabledUnits: ['Arbalester', 'Camel Rider', 'Blast Furnace'],
+    disabledUnits: ['Arbalester', 'Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 2,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -803,7 +822,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Magyars: {
     name: 'Magyars',
     uniqueUnits: ['Magyar Huszar'],
-    disabledUnits: ['Camel Rider', 'Plate Mail Armor', 'Squires'],
+    disabledUnits: ['Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -832,7 +851,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Malay: {
     name: 'Malay',
     uniqueUnits: ['Karambit Warrior'],
-    disabledUnits: ['Knight', 'Cavalier', 'Paladin', 'Camel Rider', 'Bloodlines'],
+    disabledUnits: ['Knight', 'Cavalier', 'Paladin', 'Camel Rider', 'Heavy Camel Rider', 'Hussar'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -850,7 +869,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Malians: {
     name: 'Malians',
     uniqueUnits: ['Gbeto'],
-    disabledUnits: ['Paladin', 'Hussar', 'Bracer', 'Blast Furnace'],
+    disabledUnits: ['Paladin', 'Hussar', 'Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 2,
     maxRangedAttack: 2,
     maxArcherArmor: 3,
@@ -885,7 +904,11 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Mayans: {
     name: 'Mayans',
     uniqueUnits: ['Plumed Archer'],
-    disabledUnits: ['Scout Cavalry', 'Knight', 'Camel Rider'],
+    disabledUnits: [
+      'Scout Cavalry', 'Light Cavalry', 'Hussar', 'Winged Hussar',
+      'Knight', 'Cavalier', 'Paladin', 'Camel Rider', 'Heavy Camel Rider',
+      'Battle Elephant', 'Steppe Lancer'
+    ],
     maxMeleeAttack: 2,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -914,7 +937,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Mongols: {
     name: 'Mongols',
     uniqueUnits: ['Mangudai'],
-    disabledUnits: ['Paladin', 'Ring Archer Armor', 'Plate Barding Armor'],
+    disabledUnits: ['Paladin', 'Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 2,
@@ -937,7 +960,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Persians: {
     name: 'Persians',
     uniqueUnits: ['War Elephant', 'Savar'],
-    disabledUnits: ['Arbalester', 'Bracer'],
+    disabledUnits: ['Arbalester', 'Paladin'],
     maxMeleeAttack: 3,
     maxRangedAttack: 2,
     maxArcherArmor: 3,
@@ -955,7 +978,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Poles: {
     name: 'Poles',
     uniqueUnits: ['Obuch', 'Winged Hussar'],
-    disabledUnits: ['Paladin', 'Plate Barding Armor', 'Ring Archer Armor'],
+    disabledUnits: ['Paladin', 'Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 2,
@@ -973,7 +996,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Portuguese: {
     name: 'Portuguese',
     uniqueUnits: ['Organ Gun'],
-    disabledUnits: ['Paladin', 'Camel Rider', 'Squires', 'Parthian Tactics'],
+    disabledUnits: ['Paladin', 'Camel Rider', 'Heavy Camel Rider', 'Hussar'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -991,7 +1014,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Romans: {
     name: 'Romans',
     uniqueUnits: ['Legionary', 'Centurion'],
-    disabledUnits: ['Paladin', 'Camel Rider', 'Steppe Lancer'],
+    disabledUnits: ['Paladin', 'Camel Rider', 'Heavy Camel Rider', 'Steppe Lancer', 'Hand Cannoneer', 'Bombard Cannon', 'Two-Handed Swordsman', 'Champion'],
     maxMeleeAttack: 3,
     maxRangedAttack: 2,
     maxArcherArmor: 3,
@@ -1028,7 +1051,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Saracens: {
     name: 'Saracens',
     uniqueUnits: ['Mameluke'],
-    disabledUnits: ['Paladin', 'Halberdier', 'Plate Barding Armor'],
+    disabledUnits: ['Paladin', 'Halberdier'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -1057,7 +1080,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Sicilians: {
     name: 'Sicilians',
     uniqueUnits: ['Serjeant'],
-    disabledUnits: ['Paladin', 'Camel Rider', 'Thumb Ring', 'Ring Archer Armor'],
+    disabledUnits: ['Paladin', 'Camel Rider', 'Heavy Camel Rider', 'Hussar'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 2,
@@ -1089,7 +1112,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Slavs: {
     name: 'Slavs',
     uniqueUnits: ['Boyar'],
-    disabledUnits: ['Paladin', 'Camel Rider', 'Bracer', 'Thumb Ring'],
+    disabledUnits: ['Paladin', 'Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 3,
     maxRangedAttack: 2,
     maxArcherArmor: 3,
@@ -1118,7 +1141,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Spanish: {
     name: 'Spanish',
     uniqueUnits: ['Conquistador', 'Missionary'],
-    disabledUnits: ['Crossbowman', 'Arbalester', 'Camel Rider', 'Parthian Tactics'],
+    disabledUnits: ['Crossbowman', 'Arbalester', 'Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -1150,7 +1173,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Tatars: {
     name: 'Tatars',
     uniqueUnits: ['Keshik'],
-    disabledUnits: ['Arbalester', 'Paladin', 'Camel Rider', 'Plate Mail Armor'],
+    disabledUnits: ['Arbalester', 'Paladin', 'Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -1180,7 +1203,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Teutons: {
     name: 'Teutons',
     uniqueUnits: ['Teutonic Knight'],
-    disabledUnits: ['Bracer', 'Light Cavalry', 'Hussar', 'Camel Rider', 'Thumb Ring'],
+    disabledUnits: ['Light Cavalry', 'Hussar', 'Camel Rider', 'Heavy Camel Rider'],
     maxMeleeAttack: 3,
     maxRangedAttack: 2,
     maxArcherArmor: 3,
@@ -1215,7 +1238,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Turks: {
     name: 'Turks',
     uniqueUnits: ['Janissary'],
-    disabledUnits: ['Arbalester', 'Pikeman', 'Halberdier', 'Paladin'],
+    disabledUnits: ['Arbalester', 'Elite Skirmisher', 'Pikeman', 'Halberdier', 'Paladin'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -1249,7 +1272,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Vietnamese: {
     name: 'Vietnamese',
     uniqueUnits: ['Rattan Archer', 'Imperial Skirmisher'],
-    disabledUnits: ['Paladin', 'Camel Rider', 'Blast Furnace', 'Parthian Tactics'],
+    disabledUnits: ['Paladin', 'Camel Rider', 'Heavy Camel Rider', 'Hussar'],
     maxMeleeAttack: 2,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -1283,7 +1306,7 @@ export const CIVILIZATIONS: Record<string, CivData> = {
   Vikings: {
     name: 'Vikings',
     uniqueUnits: ['Berserk'],
-    disabledUnits: ['Paladin', 'Camel Rider', 'Bloodlines', 'Thumb Ring', 'Plate Barding Armor'],
+    disabledUnits: ['Paladin', 'Camel Rider', 'Heavy Camel Rider', 'Hussar'],
     maxMeleeAttack: 3,
     maxRangedAttack: 3,
     maxArcherArmor: 3,
@@ -1318,8 +1341,8 @@ export const CIVILIZATIONS: Record<string, CivData> = {
 export const CIV_NAMES: string[] = Object.keys(CIVILIZATIONS);
 
 // Helpers
-export function isUnitAvailableForCiv(unitName: string, civName: string, fullTechTree: boolean): boolean {
-  if (fullTechTree || civName === 'Generic') return true;
+export function isUnitAvailableForCiv(unitName: string, civName: string): boolean {
+  if (civName === 'Generic') return true;
 
   // Team units available to all civs:
   if (ALL_CIV_TEAM_UNITS.some((tu) => tu.toLowerCase() === unitName.toLowerCase())) {

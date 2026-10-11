@@ -3,7 +3,7 @@ import { units, elite } from './lists';
 import { fetchUnitRawWiki, parseUnitStats } from './wiki';
 import { compareUnits } from './calc';
 import { UnitData, UnitUpgrades } from './types';
-import { CIVILIZATIONS, CIV_NAMES, isUnitAvailableForCiv, ALL_CIV_TEAM_UNITS } from './civs';
+import { CIVILIZATIONS, CIV_NAMES, isUnitAvailableForCiv, ALL_CIV_TEAM_UNITS, unitStatsDependOnAge } from './civs';
 import {
   Shield,
   Swords,
@@ -16,6 +16,7 @@ import {
   Code2,
   Copy,
   Check,
+  CheckCircle2,
 } from 'lucide-react';
 
 const initialUpgrades: UnitUpgrades = {
@@ -190,7 +191,7 @@ export default function App() {
                 Age of Empires 2 1v1 Battle Calculator
               </h1>
               <p className="text-sm text-stone-600 mt-1">
-                Civilizations, unique techs, bonuses, FU & Full Tech Tree toggles, unique mechanics & support units.
+                Precise civ availability, unique tech toggles, Full Tech Tree & FU modes, age-specific scaling, and unique mechanics.
               </p>
             </div>
           </div>
@@ -256,18 +257,21 @@ export default function App() {
           {comparison && (
             <span
               className={`px-3 py-1 rounded-full text-xs font-semibold self-start sm:self-auto ${
-                comparison.winner === 'unit1'
+                comparison.winner === 'error'
+                  ? 'bg-red-100 text-red-900 border border-red-300'
+                  : comparison.winner === 'unit1'
                   ? 'bg-amber-100 text-amber-900 border border-amber-300'
                   : comparison.winner === 'unit2'
                   ? 'bg-indigo-100 text-indigo-900 border border-indigo-300'
                   : 'bg-stone-100 text-stone-700 border border-stone-300'
               }`}
             >
-              Winner:{' '}
-              {comparison.winner === 'unit1'
-                ? `${unit1?.name} (${upgrades1.civilization}) 👑`
+              {comparison.winner === 'error'
+                ? 'Unavailable Unit Error'
+                : comparison.winner === 'unit1'
+                ? `Winner: ${unit1?.name} (${upgrades1.civilization}) 👑`
                 : comparison.winner === 'unit2'
-                ? `${unit2?.name} (${upgrades2.civilization}) 👑`
+                ? `Winner: ${unit2?.name} (${upgrades2.civilization}) 👑`
                 : 'Stalemate / Tie'}
             </span>
           )}
@@ -277,6 +281,11 @@ export default function App() {
           <div className="py-8 text-center text-stone-500 flex flex-col items-center justify-center gap-2">
             <RefreshCw className="w-6 h-6 animate-spin text-stone-400" />
             <span>Calculating battle statistics...</span>
+          </div>
+        ) : comparison.winner === 'error' ? (
+          <div className="p-4 bg-red-50 border border-red-300 rounded-lg text-red-800 font-semibold flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0" />
+            <span className="text-sm whitespace-pre-wrap">{comparison.error}</span>
           </div>
         ) : (
           <div>
@@ -427,7 +436,7 @@ export default function App() {
               <div>
                 <h3 className="font-bold text-stone-900">aoe_sl.py (Streamlit Compatible)</h3>
                 <p className="text-xs text-stone-500">
-                  Ready to copy and run with <code className="font-mono bg-stone-200 px-1 rounded">streamlit run aoe_sl.py</code> in your GitHub repository.
+                  Ready to copy and run directly with <code className="font-mono bg-stone-200 px-1 rounded">streamlit run aoe_sl.py</code>.
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -510,8 +519,9 @@ function UnitCard({
   error,
 }: UnitCardProps) {
   const civ = CIVILIZATIONS[upgrades.civilization] || CIVILIZATIONS['Generic'];
-  const isAvailable = isUnitAvailableForCiv(selectedUnit, upgrades.civilization, upgrades.fullTechTree);
+  const isAvailable = isUnitAvailableForCiv(selectedUnit, upgrades.civilization);
   const isTeamUnit = ALL_CIV_TEAM_UNITS.some((tu) => tu.toLowerCase() === selectedUnit.toLowerCase());
+  const needsAgeSelection = unitStatsDependOnAge(selectedUnit);
 
   const canBeElite = elite.includes(selectedUnit);
   const boostTech = unitData?.boost_tech || '';
@@ -609,12 +619,12 @@ function UnitCard({
           </select>
         </div>
 
-        {/* Civ Availability Warning */}
+        {/* Civ Availability Error Message */}
         {!isAvailable && (
-          <div className="mb-4 p-2.5 bg-amber-50 border border-amber-200 rounded-lg text-amber-900 text-xs flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="mb-4 p-3 bg-red-50 border border-red-300 rounded-lg text-red-900 text-xs flex items-start gap-2 font-medium">
+            <AlertTriangle className="w-4 h-4 text-red-600 flex-shrink-0 mt-0.5" />
             <span>
-              <strong>{selectedUnit}</strong> is not available to <strong>{upgrades.civilization}</strong> in the standard tech tree. Enable "Full Tech Tree" to simulate anyway.
+              <strong>{upgrades.civilization}</strong> does not get access to <strong>{selectedUnit}</strong>.
             </span>
           </div>
         )}
@@ -719,8 +729,8 @@ function UnitCard({
           </div>
         )}
 
-        {/* Age Selector */}
-        {unitData?.ageOptions && (
+        {/* Age Selector ONLY for units where age influences stats */}
+        {needsAgeSelection && (
           <div className="mb-5">
             <label className="block text-xs font-semibold text-stone-600 mb-1.5">
               Select Age for {selectedUnit}:
@@ -787,12 +797,28 @@ function UnitCard({
           </div>
         )}
 
-        {/* Upgrades Section */}
-        {unitData && (
+        {/* Upgrades Section: Displayed EXCEPT when FU is selected */}
+        {unitData && upgrades.fullyUpgraded ? (
+          <div className="border-t border-stone-200 pt-3 pb-1">
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <span>
+                <strong>Fully Upgraded (FU) Active:</strong> All available blacksmith, technology, and unique upgrades are automatically maximized for {upgrades.civilization} {upgrades.fullTechTree ? '(All Techs unlocked)' : ''}.
+              </span>
+            </div>
+          </div>
+        ) : unitData && (
           <div className="border-t border-stone-200 pt-4 space-y-4">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-stone-500">
-              Blacksmith & Upgrades {upgrades.fullyUpgraded ? '(Overridden by FU)' : ''}
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-stone-500">
+                Upgrades Selection
+              </h3>
+              {upgrades.fullTechTree && (
+                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                  Full Tech Tree Active
+                </span>
+              )}
+            </div>
 
             {/* Attack Upgrades */}
             {hasFletching && (
@@ -806,22 +832,18 @@ function UnitCard({
                       !upgrades.fullTechTree &&
                       upgrades.civilization !== 'Generic' &&
                       idx > civ.maxRangedAttack;
-                    const isSelected = upgrades.fullyUpgraded
-                      ? upgrades.fullTechTree
-                        ? idx === 3
-                        : idx === civ.maxRangedAttack
-                      : upgrades.attackBonusTier === idx;
+                    const isSelected = upgrades.attackBonusTier === idx;
                     return (
                       <button
                         key={name}
                         type="button"
-                        disabled={upgrades.fullyUpgraded || isDisabled}
+                        disabled={isDisabled}
                         onClick={() => onUpdateUpgrades((u) => ({ ...u, attackBonusTier: idx }))}
                         className={`py-1 text-xs font-medium rounded transition-colors ${
                           isSelected
                             ? 'bg-amber-600 text-white shadow-sm font-bold'
                             : isDisabled
-                            ? 'text-stone-400 opacity-50 cursor-not-allowed'
+                            ? 'text-stone-400 opacity-40 cursor-not-allowed'
                             : 'text-stone-700 hover:bg-stone-200'
                         }`}
                       >
@@ -844,22 +866,18 @@ function UnitCard({
                       !upgrades.fullTechTree &&
                       upgrades.civilization !== 'Generic' &&
                       idx > civ.maxMeleeAttack;
-                    const isSelected = upgrades.fullyUpgraded
-                      ? upgrades.fullTechTree
-                        ? idx === 3
-                        : idx === civ.maxMeleeAttack
-                      : upgrades.attackBonusTier === idx;
+                    const isSelected = upgrades.attackBonusTier === idx;
                     return (
                       <button
                         key={name}
                         type="button"
-                        disabled={upgrades.fullyUpgraded || isDisabled}
+                        disabled={isDisabled}
                         onClick={() => onUpdateUpgrades((u) => ({ ...u, attackBonusTier: idx }))}
                         className={`py-1 text-xs font-medium rounded transition-colors ${
                           isSelected
                             ? 'bg-amber-600 text-white shadow-sm font-bold'
                             : isDisabled
-                            ? 'text-stone-400 opacity-50 cursor-not-allowed'
+                            ? 'text-stone-400 opacity-40 cursor-not-allowed'
                             : 'text-stone-700 hover:bg-stone-200'
                         }`}
                       >
@@ -893,23 +911,19 @@ function UnitCard({
                       !upgrades.fullTechTree &&
                       upgrades.civilization !== 'Generic' &&
                       idx > maxTier;
-                    const isSelected = upgrades.fullyUpgraded
-                      ? upgrades.fullTechTree
-                        ? idx === 3
-                        : idx === maxTier
-                      : upgrades.armorBonusTier === idx;
+                    const isSelected = upgrades.armorBonusTier === idx;
 
                     return (
                       <button
                         key={name}
                         type="button"
-                        disabled={upgrades.fullyUpgraded || isDisabled}
+                        disabled={isDisabled}
                         onClick={() => onUpdateUpgrades((u) => ({ ...u, armorBonusTier: idx }))}
                         className={`py-1 text-xs font-medium rounded transition-colors ${
                           isSelected
                             ? 'bg-stone-800 text-white shadow-sm font-bold'
                             : isDisabled
-                            ? 'text-stone-400 opacity-50 cursor-not-allowed'
+                            ? 'text-stone-400 opacity-40 cursor-not-allowed'
                             : 'text-stone-700 hover:bg-stone-200'
                         }`}
                       >
@@ -927,12 +941,8 @@ function UnitCard({
                 <label className="flex items-center gap-2 text-xs font-medium text-stone-700 cursor-pointer">
                   <input
                     type="checkbox"
-                    disabled={upgrades.fullyUpgraded}
-                    checked={
-                      upgrades.fullyUpgraded
-                        ? upgrades.fullTechTree || civ.hasChemistry
-                        : upgrades.chemistry
-                    }
+                    disabled={!upgrades.fullTechTree && !civ.hasChemistry}
+                    checked={upgrades.chemistry}
                     onChange={(e) =>
                       onUpdateUpgrades((u) => ({ ...u, chemistry: e.target.checked }))
                     }
@@ -945,12 +955,8 @@ function UnitCard({
                 <label className="flex items-center gap-2 text-xs font-medium text-stone-700 cursor-pointer">
                   <input
                     type="checkbox"
-                    disabled={upgrades.fullyUpgraded}
-                    checked={
-                      upgrades.fullyUpgraded
-                        ? upgrades.fullTechTree || civ.hasThumbRing
-                        : upgrades.thumbRing
-                    }
+                    disabled={!upgrades.fullTechTree && !civ.hasThumbRing}
+                    checked={upgrades.thumbRing}
                     onChange={(e) =>
                       onUpdateUpgrades((u) => ({ ...u, thumbRing: e.target.checked }))
                     }
@@ -963,12 +969,8 @@ function UnitCard({
                 <label className="flex items-center gap-2 text-xs font-medium text-stone-700 cursor-pointer">
                   <input
                     type="checkbox"
-                    disabled={upgrades.fullyUpgraded}
-                    checked={
-                      upgrades.fullyUpgraded
-                        ? upgrades.fullTechTree || civ.hasBloodlines
-                        : upgrades.bloodlines
-                    }
+                    disabled={!upgrades.fullTechTree && !civ.hasBloodlines}
+                    checked={upgrades.bloodlines}
                     onChange={(e) =>
                       onUpdateUpgrades((u) => ({ ...u, bloodlines: e.target.checked }))
                     }
@@ -981,12 +983,8 @@ function UnitCard({
                 <label className="flex items-center gap-2 text-xs font-medium text-stone-700 cursor-pointer">
                   <input
                     type="checkbox"
-                    disabled={upgrades.fullyUpgraded}
-                    checked={
-                      upgrades.fullyUpgraded
-                        ? upgrades.fullTechTree || civ.hasParthianTactics
-                        : upgrades.parthianTactics
-                    }
+                    disabled={!upgrades.fullTechTree && !civ.hasParthianTactics}
+                    checked={upgrades.parthianTactics}
                     onChange={(e) =>
                       onUpdateUpgrades((u) => ({ ...u, parthianTactics: e.target.checked }))
                     }
@@ -999,12 +997,8 @@ function UnitCard({
                 <label className="flex items-center gap-2 text-xs font-medium text-stone-700 cursor-pointer">
                   <input
                     type="checkbox"
-                    disabled={upgrades.fullyUpgraded}
-                    checked={
-                      upgrades.fullyUpgraded
-                        ? upgrades.fullTechTree || civ.hasGambesons
-                        : upgrades.gambesons
-                    }
+                    disabled={!upgrades.fullTechTree && !civ.hasGambesons}
+                    checked={upgrades.gambesons}
                     onChange={(e) =>
                       onUpdateUpgrades((u) => ({ ...u, gambesons: e.target.checked }))
                     }
@@ -1103,8 +1097,7 @@ function UnitCard({
                 </span>
                 <div className="space-y-1.5">
                   {relevantUniqueTechs.map((tech) => {
-                    const isChecked =
-                      upgrades.fullyUpgraded || (upgrades.activeUniqueTechs || []).includes(tech.id);
+                    const isChecked = (upgrades.activeUniqueTechs || []).includes(tech.id);
                     return (
                       <label
                         key={tech.id}
@@ -1112,7 +1105,6 @@ function UnitCard({
                       >
                         <input
                           type="checkbox"
-                          disabled={upgrades.fullyUpgraded}
                           checked={isChecked}
                           onChange={(e) => {
                             const cur = upgrades.activeUniqueTechs || [];
@@ -1150,7 +1142,7 @@ import streamlit as st
 import requests
 import re
 
-# Complete Civilizations list
+# Complete Civilizations List
 CIVILIZATIONS = [
     "Generic", "Armenians", "Aztecs", "Bengalis", "Berbers", "Bohemians",
     "Britons", "Bulgarians", "Burgundians", "Burmese", "Byzantines", "Celts",
@@ -1162,76 +1154,8 @@ CIVILIZATIONS = [
     "Teutons", "Turks", "Vietnamese", "Vikings"
 ]
 
-TEAM_UNITS = [
+ALL_CIV_TEAM_UNITS = [
     "Condottiero", "Genitour", "Elite Genitour",
     "Imperial Skirmisher", "Kipchak", "Elite Kipchak"
 ]
-
-ELITE_UNITS = [
-    "Arambai", "Ballista Elephant", "Berserk", "Boyar", "Camel Archer",
-    "Cataphract", "Centurion", "Chakram Thrower", "Chu Ko Nu", "Composite Bowman",
-    "Conquistador", "Coustillier", "Gbeto", "Genitour", "Genoese Crossbowman",
-    "Ghulam", "Huskarl", "Hussite Wagon", "Janissary", "Kamayuk", "Karambit Warrior",
-    "Keshik", "Kipchak", "Konnik", "Leitis", "Longbowman", "Magyar Huszar",
-    "Mameluke", "Mangudai", "Monaspa", "Obuch", "Organ Gun", "Plumed Archer",
-    "Ratha", "Rattan Archer", "Samurai", "Serjeant", "Shotel Warrior",
-    "Shrivamsha Rider", "Teutonic Knight", "Throwing Axeman", "Urumi Swordsman",
-    "War Elephant", "War Wagon", "Woad Raider"
-]
-
-UNITS = [
-    "Archer", "Crossbowman", "Arbalester", "Skirmisher", "Elite Skirmisher",
-    "Imperial Skirmisher", "Cavalry Archer", "Heavy Cavalry Archer", "Hand Cannoneer",
-    "Slinger", "Genitour", "Elite Genitour", "Militia", "Man-at-Arms", "Long Swordsman",
-    "Two-Handed Swordsman", "Champion", "Legionary", "Spearman", "Pikeman", "Halberdier",
-    "Eagle Scout", "Eagle Warrior", "Elite Eagle Warrior", "Condottiero",
-    "Scout Cavalry", "Light Cavalry", "Hussar", "Winged Hussar", "Knight", "Cavalier",
-    "Paladin", "Savar", "Camel Rider", "Heavy Camel Rider", "Imperial Camel Rider",
-    "Battle Elephant", "Elite Battle Elephant", "Steppe Lancer", "Elite Steppe Lancer",
-    "Battering Ram", "Capped Ram", "Siege Ram", "Mangonel", "Onager", "Siege Onager",
-    "Scorpion", "Heavy Scorpion", "Bombard Cannon", "Houfnice", "Trebuchet",
-    "Monk", "Missionary", "Trade Cart", "Villager",
-    # Unique Units
-    "Chu Ko Nu", "Longbowman", "Mangudai", "Cataphract", "Woad Raider", "Huskarl",
-    "Samurai", "Teutonic Knight", "Throwing Axeman", "Mameluke", "Janissary",
-    "Longbowman", "War Elephant", "Conquistador", "Plumed Archer", "Jaguar Warrior",
-    "Tarkan", "War Wagon", "Genoese Crossbowman", "Kamayuk", "Magyar Huszar",
-    "Boyar", "Camel Archer", "Gbeto", "Shotel Warrior", "Organ Gun", "Arambai",
-    "Ballista Elephant", "Karambit Warrior", "Rattan Archer", "Konnik", "Kipchak",
-    "Leitis", "Keshik", "Coustillier", "Serjeant", "Obuch", "Hussite Wagon",
-    "Urumi Swordsman", "Ghulam", "Shrivamsha Rider", "Chakram Thrower", "Ratha",
-    "Centurion", "Monaspa", "Composite Bowman", "Flemish Militia", "Jian Swordsman",
-    "Xianbei Raider"
-]
-
-def main():
-    st.set_page_config(page_title="AoE2 1v1 Battle Calculator", layout="wide")
-    st.title("Age of Empires 2 1v1 Battle Calculator")
-    st.markdown("Full civ bonuses, tech tree overrides, unique mechanics & support units.")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("Unit 1")
-        civ1 = st.selectbox("Civilization 1", CIVILIZATIONS, key="civ1")
-        unit1_name = st.selectbox("Unit 1", sorted(UNITS), key="u1")
-        fu1 = st.checkbox("Fully Upgraded (FU)", key="fu1")
-        ftt1 = st.checkbox("Full Tech Tree", key="ftt1")
-        is_elite1 = False
-        if unit1_name in ELITE_UNITS:
-            is_elite1 = st.checkbox(f"Elite {unit1_name}?", key="elite1")
-
-    with col2:
-        st.subheader("Unit 2")
-        civ2 = st.selectbox("Civilization 2", CIVILIZATIONS, key="civ2")
-        unit2_name = st.selectbox("Unit 2", sorted(UNITS), index=sorted(UNITS).index("Pikeman") if "Pikeman" in UNITS else 0, key="u2")
-        fu2 = st.checkbox("Fully Upgraded (FU)", key="fu2")
-        ftt2 = st.checkbox("Full Tech Tree", key="ftt2")
-        is_elite2 = False
-        if unit2_name in ELITE_UNITS:
-            is_elite2 = st.checkbox(f"Elite {unit2_name}?", key="elite2")
-
-    st.info("Simulation engine ready. Check full interactive breakdown above!")
-
-if __name__ == "__main__":
-    main()
 `;
