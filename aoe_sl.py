@@ -84,64 +84,62 @@ ELITE_UNITS = [
     "Varangian Guard", "War Elephant", "War Wagon", "Woad Raider", "Xianbei Raider"
 ]
 
-# Accurate Tech Tree limits per civilization
-# max_c_arm for Malay is 1 (Scale Barding Armor in Feudal, lacks Chain and Plate Barding)
+# Civilization tech tree maximums and tech allowances
 CIV_DATA = {
-    "Generic": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True},
-    "Armenians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": True, "gambesons": True},
-    "Aztecs": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": False},
-    "Bengalis": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True},
-    "Berbers": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": False},
-    "Bohemians": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True},
-    "Britons": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True},
-    "Bulgarians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True},
-    "Burgundians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True},
-    "Burmese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 1, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": True, "gambesons": True},
-    "Byzantines": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True},
-    "Celts": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True},
-    "Chinese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True},
-    "Cumans": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": False, "gambesons": True},
-    "Danes": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True},
-    "Dravidians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 1, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True},
-    "Ethiopians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True},
-    "Franks": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True},
-    "Georgians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True},
-    "Goths": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True},
-    "Gurjaras": {"max_m_atk": 2, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True},
-    "Hindustanis": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True},
-    "Huns": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False},
-    "Incas": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True},
-    "Italians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True},
-    "Japanese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True},
-    "Khmer": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": True, "gambesons": False},
-    "Koreans": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True},
-    "Lithuanians": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True},
-    "Magyars": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False},
-    "Malay": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 1, "max_i_arm": 2, "bloodlines": False, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True},
-    "Malians": {"max_m_atk": 2, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True},
-    "Mapuche": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True},
-    "Mayans": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True},
-    "Mongols": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True},
-    "Muisca": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True},
-    "Persians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True},
-    "Poles": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True},
-    "Portuguese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True},
-    "Romans": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": False, "gambesons": True},
-    "Saracens": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True},
-    "Saxons": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True},
-    "Sicilians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True},
-    "Slavs": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True},
-    "Spanish": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True},
-    "Tatars": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False},
-    "Teutons": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True},
-    "Tupi": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 0, "max_i_arm": 2, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True},
-    "Turks": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True},
-    "Varangians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True},
-    "Vietnamese": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True},
-    "Vikings": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True},
+    "Generic": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Armenians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Aztecs": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": False, "siege_engineers": True},
+    "Bengalis": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Berbers": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": False, "siege_engineers": True},
+    "Bohemians": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Britons": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Bulgarians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Burgundians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Burmese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 1, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Byzantines": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Celts": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Chinese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Cumans": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": False, "gambesons": True, "siege_engineers": True},
+    "Danes": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Dravidians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 1, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Ethiopians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Franks": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Georgians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Goths": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Gurjaras": {"max_m_atk": 2, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Hindustanis": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Huns": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "siege_engineers": True},
+    "Incas": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Italians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Japanese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Khmer": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": True, "gambesons": False, "siege_engineers": True},
+    "Koreans": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Lithuanians": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Magyars": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "siege_engineers": True},
+    "Malay": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 1, "max_i_arm": 2, "bloodlines": False, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Malians": {"max_m_atk": 2, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Mapuche": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Mayans": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Mongols": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Muisca": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Persians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Poles": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Portuguese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Romans": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": False, "gambesons": True, "siege_engineers": True},
+    "Saracens": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Saxons": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Sicilians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Slavs": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Spanish": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Tatars": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "siege_engineers": True},
+    "Teutons": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Tupi": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 0, "max_i_arm": 2, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Turks": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Varangians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Vietnamese": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Vikings": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
 }
 
-# Unique units dedicated exclusively to particular civilizations
 EXCLUSIVE_UNIQUE_UNITS = {
     "Arambai": ["Burmese"],
     "Ballista Elephant": ["Khmer"],
@@ -205,7 +203,8 @@ EXCLUSIVE_UNIQUE_UNITS = {
 
 NO_STABLE_CIVS = ["Aztecs", "Incas", "Mayans", "Muisca", "Tupi"]
 
-# Specific unit availability restrictions across all 52 civilizations
+# Strict unit availability restrictions across all 52 civilizations
+# Note: Lithuanians & Poles get Winged Hussar, NOT standard Hussar!
 UNIT_RESTRICTIONS = {
     "Cavalry Archer": {
         "banned": ["Aztecs", "Britons", "Burgundians", "Celts", "Franks", "Incas", "Mayans", "Muisca", "Teutons", "Tupi", "Vikings", "Armenians", "Bohemians"]
@@ -213,11 +212,20 @@ UNIT_RESTRICTIONS = {
     "Heavy Cavalry Archer": {
         "banned": ["Aztecs", "Britons", "Burgundians", "Celts", "Franks", "Incas", "Mayans", "Muisca", "Teutons", "Tupi", "Vikings", "Armenians", "Bohemians", "Bulgarians", "Burmese", "Goths", "Italians", "Malay", "Malians", "Poles", "Portuguese", "Romans", "Sicilians", "Slavs", "Spanish"]
     },
+    "Hussar": {
+        "banned": ["Aztecs", "Britons", "Chinese", "Franks", "Incas", "Japanese", "Lithuanians", "Malay", "Mayans", "Muisca", "Poles", "Portuguese", "Teutons", "Tupi", "Vikings"]
+    },
+    "Winged Hussar": {
+        "allowed": ["Lithuanians", "Poles"]
+    },
     "Halberdier": {
         "banned": ["Turks", "Aztecs", "Berbers", "Chinese", "Italians", "Malians", "Mongols", "Portuguese", "Saracens"]
     },
     "Paladin": {
         "allowed": ["Burgundians", "Byzantines", "Celts", "Cumans", "Franks", "Huns", "Lithuanians", "Magyars", "Spanish", "Teutons"]
+    },
+    "Savar": {
+        "allowed": ["Persians"]
     },
     "Cavalier": {
         "banned": ["Aztecs", "Bengalis", "Dravidians", "Gurjaras", "Hindustanis", "Incas", "Mayans", "Muisca", "Saracens", "Tupi"]
@@ -232,10 +240,13 @@ UNIT_RESTRICTIONS = {
         "banned": ["Bulgarians", "Spanish"]
     },
     "Champion": {
-        "banned": ["Bulgarians", "Ethiopians", "Huns", "Khmer", "Malay", "Mayans", "Persians", "Tatars"]
+        "banned": ["Bulgarians", "Ethiopians", "Huns", "Khmer", "Malay", "Mayans", "Persians", "Tatars", "Romans"]
     },
     "Two-Handed Swordsman": {
-        "banned": ["Persians"]
+        "banned": ["Persians", "Romans"]
+    },
+    "Legionary": {
+        "allowed": ["Romans"]
     },
     "Hand Cannoneer": {
         "banned": ["Aztecs", "Britons", "Bulgarians", "Burmese", "Celts", "Chinese", "Cumans", "Huns", "Incas", "Magyars", "Malay", "Mayans", "Mongols", "Muisca", "Slavs", "Teutons", "Tupi", "Vikings", "Mapuche"]
@@ -270,9 +281,6 @@ UNIT_RESTRICTIONS = {
     "Mounted Crossbowman": {
         "allowed": ["Bohemians", "Britons", "Burgundians", "Franks", "Lithuanians", "Magyars", "Poles", "Portuguese", "Romans", "Saxons", "Sicilians", "Slavs"]
     },
-    "Hussar": {
-        "banned": ["Aztecs", "Britons", "Chinese", "Franks", "Incas", "Japanese", "Malay", "Mayans", "Muisca", "Portuguese", "Teutons", "Tupi", "Vikings"]
-    },
     "Siege Onager": {
         "allowed": ["Aztecs", "Celts", "Ethiopians", "Koreans", "Malians", "Mongols", "Saracens", "Slavs", "Teutons"]
     },
@@ -281,15 +289,6 @@ UNIT_RESTRICTIONS = {
     },
     "Houfnice": {
         "allowed": ["Bohemians"]
-    },
-    "Savar": {
-        "allowed": ["Persians"]
-    },
-    "Legionary": {
-        "allowed": ["Romans"]
-    },
-    "Winged Hussar": {
-        "allowed": ["Lithuanians", "Poles"]
     }
 }
 
@@ -297,30 +296,25 @@ def is_unit_available(civ: str, unit_name: str) -> tuple[bool, str]:
     if civ == "Generic":
         return True, ""
 
-    # Shared alliance units available to all civs
     if unit_name in ALL_CIV_TEAM_UNITS:
         return True, ""
 
     base_name = unit_name.replace("Elite ", "")
 
-    # Check exclusive unique units
     if base_name in EXCLUSIVE_UNIQUE_UNITS:
         allowed = EXCLUSIVE_UNIQUE_UNITS[base_name]
         if civ not in allowed:
             return False, f"{civ} does not get access to {unit_name}."
 
-    # Check Meso / Native American stable restrictions
     if civ in NO_STABLE_CIVS:
         cavalry_units = ["Knight", "Cavalier", "Paladin", "Scout Cavalry", "Light Cavalry", "Hussar", "Camel Rider", "Heavy Camel Rider", "Steppe Lancer", "Battle Elephant", "Cavalry Archer", "Heavy Cavalry Archer"]
         if base_name in cavalry_units:
             return False, f"{civ} does not have access to Stables ({unit_name})."
 
-    # Non-American civilizations do not get Eagle units
     if base_name in ["Eagle Scout", "Eagle Warrior", "Elite Eagle Warrior"]:
         if civ not in ["Aztecs", "Incas", "Mayans", "Mapuche", "Muisca", "Tupi"]:
             return False, f"{civ} does not get access to {unit_name}."
 
-    # Check specific ban/allow lists
     if base_name in UNIT_RESTRICTIONS:
         rule = UNIT_RESTRICTIONS[base_name]
         if "banned" in rule and civ in rule["banned"]:
@@ -356,6 +350,8 @@ def fetch_wiki_unit(unit_name: str):
     title = unit_name.replace(" ", "_")
     if title == "Villager":
         title = "Villager_(Age_of_Empires_II)"
+    elif title == "Trebuchet":
+        title = "Trebuchet_(Age_of_Empires_II)"
     url = f"https://ageofempires.fandom.com/api.php?action=query&prop=revisions&titles={title}&rvprop=content&formatversion=2&format=json"
     try:
         r = requests.get(url, timeout=5).json()
@@ -374,32 +370,34 @@ def fetch_wiki_unit(unit_name: str):
     except Exception:
         return None, ""
 
-# Curated unit baseline fallbacks for Patch 185872
+# Curated unit baseline fallbacks for Patch 185872 with exact historical boost technologies
 CURATED_UNITS = {
-    "Knight": (100, None, 10, 1.8, 2, 2, {}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines"),
-    "Cavalier": (120, None, 12, 1.8, 2, 2, {}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines"),
-    "Paladin": (160, None, 14, 1.9, 2, 3, {}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines"),
-    "Scout Cavalry": (45, None, 3, 2.04, 0, 2, {"Monk": 6}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines"),
-    "Light Cavalry": (60, None, 7, 2.0, 0, 2, {"Monk": 10}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines"),
-    "Hussar": (75, None, 7, 1.9, 0, 2, {"Monk": 12}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines"),
-    "Pikeman": (55, None, 4, 3.05, 1, 0, {"Cavalry": 22, "Camel": 18, "War elephant": 25}, ["Infantry"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor"),
-    "Halberdier": (60, None, 6, 3.05, 1, 0, {"Cavalry": 32, "Camel": 26, "War elephant": 28}, ["Infantry"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor"),
-    "Archer": (30, 4, None, 2.0, 0, 0, {"Spearman": 3}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring"),
-    "Crossbowman": (35, 5, None, 2.0, 0, 0, {"Spearman": 3}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring"),
-    "Arbalester": (40, 6, None, 2.0, 0, 0, {"Spearman": 3}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring"),
-    "Skirmisher": (30, 2, None, 3.0, 0, 3, {"Archer": 3, "Spearman": 3}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring"),
-    "Elite Skirmisher": (35, 3, None, 3.0, 0, 4, {"Archer": 4, "Spearman": 3, "Cavalry archer": 2}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring"),
-    "Imperial Skirmisher": (35, 4, None, 3.0, 0, 4, {"Archer": 5, "Spearman": 3, "Cavalry archer": 3}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring"),
-    "Cavalry Archer": (50, 6, None, 2.0, 0, 0, {"Spearman": 2}, ["Archer", "Cavalry archer", "Cavalry"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Bloodlines, Thumb Ring, Parthian Tactics, Chemistry"),
-    "Heavy Cavalry Archer": (60, 7, None, 2.0, 1, 0, {"Spearman": 4}, ["Archer", "Cavalry archer", "Cavalry"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Bloodlines, Thumb Ring, Parthian Tactics, Chemistry"),
-    "Champion": (70, None, 13, 2.0, 1, 1, {"Eagle Warrior": 8, "Standard building": 4}, ["Infantry"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons"),
+    "Trebuchet": (150, 200, None, 10.0, 2, 8, {"Building": 250}, ["Siege weapon"], "Kataparuto, Warwolf, Ironclad, Furor Celticus, Siege Engineers"),
+    "Knight": (100, None, 10, 1.8, 2, 2, {}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines, Hauberk, Stirrups, Farimba, Wootz Steel, Comitatenses"),
+    "Cavalier": (120, None, 12, 1.8, 2, 2, {}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines, Hauberk, Stirrups, Farimba, Wootz Steel, Comitatenses"),
+    "Paladin": (160, None, 14, 1.9, 2, 3, {}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines, Hauberk, Stirrups, Farimba"),
+    "Scout Cavalry": (45, None, 3, 2.04, 0, 2, {"Monk": 6}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines, Silk Armor, Stirrups, Farimba"),
+    "Light Cavalry": (60, None, 7, 2.0, 0, 2, {"Monk": 10}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines, Silk Armor, Stirrups, Farimba"),
+    "Hussar": (75, None, 7, 1.9, 0, 2, {"Monk": 12}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines, Silk Armor, Stirrups, Farimba"),
+    "Winged Hussar": (80, None, 9, 1.9, 1, 2, {"Monk": 12}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines, Lechitic Legacy"),
+    "Pikeman": (55, None, 4, 3.05, 1, 0, {"Cavalry": 22, "Camel": 18, "War elephant": 25}, ["Infantry"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Garland Wars, Wootz Steel, Tower Shields"),
+    "Halberdier": (60, None, 6, 3.05, 1, 0, {"Cavalry": 32, "Camel": 26, "War elephant": 28}, ["Infantry"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Garland Wars, Wootz Steel, Tower Shields"),
+    "Archer": (30, 4, None, 2.0, 0, 0, {"Spearman": 3}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring, Bogsveigar"),
+    "Crossbowman": (35, 5, None, 2.0, 0, 0, {"Spearman": 3}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring, Bogsveigar, Cranequins"),
+    "Arbalester": (40, 6, None, 2.0, 0, 0, {"Spearman": 3}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring, Bogsveigar, Cranequins"),
+    "Skirmisher": (30, 2, None, 3.0, 0, 3, {"Archer": 3, "Spearman": 3}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring, Tower Shields, Hul'che Javelineers"),
+    "Elite Skirmisher": (35, 3, None, 3.0, 0, 4, {"Archer": 4, "Spearman": 3, "Cavalry archer": 2}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring, Tower Shields, Hul'che Javelineers"),
+    "Imperial Skirmisher": (35, 4, None, 3.0, 0, 4, {"Archer": 5, "Spearman": 3, "Cavalry archer": 3}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring, Tower Shields, Hul'che Javelineers"),
+    "Cavalry Archer": (50, 6, None, 2.0, 0, 0, {"Spearman": 2}, ["Archer", "Cavalry archer", "Cavalry"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Bloodlines, Thumb Ring, Parthian Tactics, Chemistry, Recurve Bow, Sipahi, Silk Armor"),
+    "Heavy Cavalry Archer": (60, 7, None, 2.0, 1, 0, {"Spearman": 4}, ["Archer", "Cavalry archer", "Cavalry"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Bloodlines, Thumb Ring, Parthian Tactics, Chemistry, Recurve Bow, Sipahi, Silk Armor"),
+    "Champion": (70, None, 13, 2.0, 1, 1, {"Eagle Warrior": 8, "Standard building": 4}, ["Infantry"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons, Garland Wars, Wootz Steel, Druzhina"),
     "Jian Swordsman": (65, None, 12, 2.0, 1, 1, {"Eagle Warrior": 6}, ["Infantry", "Unshielded"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons"),
-    "Chu Ko Nu": (45, 8, None, 3.0, 0, 0, {"Spearman": 2}, ["Archer", "Unique unit"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry"),
+    "Chu Ko Nu": (45, 8, None, 3.0, 0, 0, {"Spearman": 2}, ["Archer", "Unique unit"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Rocketry"),
     "Kipchak": (40, 4, None, 2.2, 0, 0, {"Spearman": 2}, ["Archer", "Cavalry archer", "Cavalry", "Unique unit"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Bloodlines, Thumb Ring"),
     "Coustillier": (115, None, 8, 1.9, 2, 2, {}, ["Cavalry", "Unique unit"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor"),
     "Obuch": (80, None, 8, 1.9, 2, 2, {}, ["Infantry", "Unique unit"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor"),
     "Leitis": (100, None, 12, 1.9, 1, 1, {}, ["Cavalry", "Unique unit"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines"),
-    "Urumi Swordsman": (55, None, 8, 2.0, 1, 0, {}, ["Infantry", "Unique unit"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor"),
+    "Urumi Swordsman": (55, None, 8, 2.0, 1, 0, {}, ["Infantry", "Unique unit"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Wootz Steel"),
     "Varangian Guard": (75, None, 12, 1.9, 2, 2, {}, ["Infantry", "Unique unit"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor"),
     "Jomsviking": (70, None, 11, 2.0, 1, 1, {"Building": 4}, ["Infantry", "Unique unit"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor"),
     "Hearth Troop": (70, 7, 10, 2.0, 2, 2, {}, ["Infantry", "Unique unit"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor"),
@@ -409,45 +407,9 @@ CURATED_UNITS = {
     "Ibirapema Warrior": (60, None, 10, 1.9, 1, 1, {}, ["Infantry", "Unique unit"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor"),
     "Mounted Crossbowman": (50, 6, None, 2.1, 0, 1, {}, ["Cavalry", "Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Bloodlines"),
     "Monk": (30, None, None, 5.5, 0, 0, {}, ["Monk"], ""),
-    "Villager": (25, None, 3, 2.03, 0, 0, {}, [], ""),
+    "Villager": (25, None, 3, 2.03, 0, 0, {}, [], "Supremacy, Loom, Wheelbarrow, Hand Cart"),
     "Trade Cart": (70, None, None, 2.0, 0, 0, {}, [], "")
 }
-
-def get_unit_archetypes(unit_name: str, base_classes: list[str]):
-    norm = unit_name.lower()
-    classes = [c.lower() for c in base_classes]
-    
-    is_inf = ("infantry" in classes) or any(u in norm for u in [
-        "swordsman", "militia", "spearman", "pikeman", "halberdier", "eagle", 
-        "woad", "axeman", "huskarl", "samurai", "teutonic knight", "berserk",
-        "jaguar", "kamayuk", "condottiero", "shotel", "gbeto", "karambit",
-        "serjeant", "obuch", "urumi", "ghulam", "chakram", "legionary",
-        "varangian", "jomsviking", "hearth troop", "guecha", "ibirapema", "warrior priest"
-    ])
-    
-    is_cav = ("cavalry" in classes) or any(u in norm for u in [
-        "scout", "light cavalry", "hussar", "knight", "cavalier", "paladin",
-        "savar", "centurion", "camel", "elephant", "lancer", "cataphract",
-        "tarkan", "boyar", "konnik", "keshik", "coustillier", "leitis",
-        "monaspa", "shrivamsha", "kona", "bolas", "ratha", "genitour", "mounted crossbowman"
-    ])
-    
-    is_arch = ("archer" in classes) or any(u in norm for u in [
-        "archer", "crossbowman", "arbalester", "skirmisher", "longbowman",
-        "chu ko nu", "plumed", "rattan", "composite bowman", "genoese",
-        "slinger", "mounted crossbowman", "cavalry archer", "kipchak", "mangudai", "ratha"
-    ])
-    
-    is_cav_arch = ("cavalry archer" in classes) or any(u in norm for u in [
-        "cavalry archer", "camel archer", "mangudai", "kipchak", "elephant archer",
-        "genitour", "bolas rider", "ratha"
-    ])
-    
-    is_gun = ("gunpowder unit" in classes or "gunpowder" in classes) or any(u in norm for u in [
-        "hand cannoneer", "janissary", "conquistador", "organ gun", "bombard cannon", "houfnice"
-    ])
-    
-    return is_inf, is_cav, is_arch, is_cav_arch, is_gun
 
 def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
     norm = unit_name.lower()
@@ -471,13 +433,18 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
 
     if "eagle scout" in norm:
         atk = 4 if age <= 2 else 7
-        return Unit("Eagle Scout", 50 if age <= 2 else 55, m_attack=atk, rof=2.0, armor=0, pierce_armor=2 if age <= 2 else 3, attack_bonus={"Cavalry": 3, "Camel": 1}, armor_class=["Infantry", "Eagle Warrior"], boost_tech="Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor", elite=is_elite)
+        return Unit("Eagle Scout", 50 if age <= 2 else 55, m_attack=atk, rof=2.0, armor=0, pierce_armor=2 if age <= 2 else 3, attack_bonus={"Cavalry": 3, "Camel": 1}, armor_class=["Infantry", "Eagle Warrior"], boost_tech="Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, El Dorado", elite=is_elite)
 
     content, boost_tech = fetch_wiki_unit(unit_name)
 
+    # Combine wiki boost_tech with curated list for comprehensive coverage
+    curated_boost = CURATED_UNITS.get(unit_name, ("", "", "", "", "", "", "", "", ""))[8]
+    if curated_boost:
+        boost_tech = f"{boost_tech}, {curated_boost}"
+
     if not content and unit_name in CURATED_UNITS:
         c = CURATED_UNITS[unit_name]
-        return Unit(f"Elite {unit_name}" if (is_elite and not unit_name.startswith("Elite")) else unit_name, c[0], c[1], c[2], c[3], c[4], c[5], dict(c[6]), list(c[7]), c[8], is_elite)
+        return Unit(f"Elite {unit_name}" if (is_elite and not unit_name.startswith("Elite")) else unit_name, c[0], c[1], c[2], c[3], c[4], c[5], dict(c[6]), list(c[7]), boost_tech, is_elite)
 
     if not content:
         return Unit(unit_name, 60, m_attack=10, rof=2.0, armor=1, pierce_armor=1, armor_class=["Infantry"], boost_tech="Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor", elite=is_elite)
@@ -529,7 +496,6 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
     if "jian swordsman" in norm and "Unshielded" not in armor_class:
         armor_class.append("Unshielded")
 
-    # If wiki omitted essential class, augment from curated archetypes
     if unit_name in CURATED_UNITS:
         for c in CURATED_UNITS[unit_name][7]:
             if c not in armor_class:
@@ -555,8 +521,11 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
         hp += 40
     if up.get("chatras") and "battle elephant" in u.name.lower():
         hp += 100
+    if up.get("furor_celticus") and ("siege" in str(u.armor_class).lower() or "trebuchet" in u.name.lower()):
+        hp = int(hp * 1.4)
 
     rof = u.rof
+    # Civ attack speed bonuses
     if civ == "Japanese" and any(c in u.armor_class for c in ["Infantry"]):
         rof *= 0.75
     elif civ == "Mongols" and any(c in u.armor_class for c in ["Cavalry archer"]):
@@ -565,6 +534,15 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
         rof *= 0.833
     elif up.get("stirrups") and any(c in u.armor_class for c in ["Cavalry"]):
         rof *= 0.75
+    elif up.get("kataparuto") and "trebuchet" in u.name.lower():
+        rof *= 0.75
+
+    # Thumb Ring increases fire rate: Foot archers ~18% faster (0.85x), Cav Archers ~11% faster (0.90x)
+    if up.get("thumb_ring"):
+        if any(c in u.armor_class for c in ["Cavalry archer"]):
+            rof *= 0.90
+        elif any(c in u.armor_class for c in ["Archer"]):
+            rof *= 0.85
 
     m_atk = u.m_attack
     if m_atk is not None:
@@ -585,6 +563,12 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
             p_atk += 1
         if up.get("rocketry") and "chu ko nu" in u.name.lower():
             p_atk += 2
+        if up.get("rocketry") and "scorpion" in u.name.lower():
+            p_atk += 4
+        if up.get("bogsveigar") and any(c in u.armor_class for c in ["Archer"]):
+            p_atk += 1
+        if up.get("cranequins") and any(c in u.name.lower() for c in ["crossbowman", "arbalester"]):
+            p_atk += 1
 
     armor_mult = 2 if civ == "Romans" else 1
     m_arm = u.armor + up.get("m_arm_val", 0) * armor_mult
@@ -600,6 +584,21 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
         m_arm += 1
         p_arm += 2
     if up.get("hauberk") and "knight" in u.name.lower():
+        m_arm += 1
+        p_arm += 2
+    if up.get("ironclad") and ("siege" in str(u.armor_class).lower() or "trebuchet" in u.name.lower()):
+        m_arm += 4
+    if up.get("bagains") and "two-handed" in u.name.lower():
+        m_arm += 5
+    if up.get("tower_shields") and any(c in u.name.lower() for c in ["spearman", "pikeman", "halberdier", "skirmisher"]):
+        p_arm += 2
+    if up.get("pavise") and any(c in u.name.lower() for c in ["genoese", "condottiero"]):
+        m_arm += 1
+        p_arm += 1
+    if up.get("silk_armor") and any(c in u.name.lower() for c in ["scout", "light cavalry", "hussar", "lancer", "cavalry archer"]):
+        m_arm += 1
+        p_arm += 1
+    if up.get("fabric_shields") and any(c in u.name.lower() for c in ["kamayuk", "slinger", "eagle"]):
         m_arm += 1
         p_arm += 2
 
@@ -641,8 +640,13 @@ def format_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -
         special.append(f"Multishot ({5 if u.elite else 3} arrows)")
     if "kipchak" in u.name.lower():
         special.append(f"Multishot ({4 if u.elite else 3} arrows)")
+    if up.get("kataparuto"):
+        special.append("Kataparuto (33% Faster Attack & 4x Pack Speed)")
+    if up.get("warwolf"):
+        special.append("Warwolf (100% Blast Damage)")
     if up.get("thumb_ring"):
-        special.append("Thumb Ring (100% Accuracy)")
+        rate_txt = "11% Faster Attack" if "cavalry archer" in str(u.armor_class).lower() else "18% Faster Attack"
+        special.append(f"Thumb Ring ({rate_txt})")
     if civ == "Sicilians":
         special.append("Takes 33% Less Bonus Damage")
     if civ == "Romans" and any(c in u.armor_class for c in ["Infantry"]):
@@ -671,7 +675,6 @@ def simulate_1v1(u1: Unit, u2: Unit, civ1: str, civ2: str, up1: dict, up2: dict)
     eff1 = compute_effective_stats(u1, civ1, up1, u2)
     eff2 = compute_effective_stats(u2, civ2, up2, u1)
 
-    # Unit 1 attack simulation against Unit 2
     hits1 = 0
     time1 = 0.0
     if can_attack1:
@@ -712,7 +715,6 @@ def simulate_1v1(u1: Unit, u2: Unit, civ1: str, civ2: str, up1: dict, up2: dict)
 
         time1 = max(0.0, (hits1 - 1) * eff1["rof"])
 
-    # Unit 2 attack simulation against Unit 1
     hits2 = 0
     time2 = 0.0
     if can_attack2:
@@ -759,7 +761,6 @@ def simulate_1v1(u1: Unit, u2: Unit, civ1: str, civ2: str, up1: dict, up2: dict)
     if can_attack1 and not can_attack2:
         return f"{u2.name} ({civ2}) does not attack.\n\n{u1.name} ({civ1}) takes {hits1} hits and {time1:.2f} seconds to kill {u2.name} ({civ2})\n\n{u1.name} ({civ1}) wins 1v1 (uncontested)"
 
-    # When both can attack, formulate complete breakdown with civilization in ()
     winner_str = ""
     if time1 < time2:
         winner_str = f"{u1.name} ({civ1}) wins 1v1"
@@ -775,7 +776,6 @@ def simulate_1v1(u1: Unit, u2: Unit, civ1: str, civ2: str, up1: dict, up2: dict)
     )
     return summary
 
-# Upgrade option dictionaries with descriptive display names
 MELEE_ATK_NAMES = {0: "None (+0)", 1: "Forging (+1)", 2: "Iron Casting (+2)", 3: "Blast Furnace (+4)"}
 MELEE_ATK_VALUES = {0: 0, 1: 1, 2: 2, 3: 4}
 
@@ -808,7 +808,6 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         if unit_name in ELITE_UNITS:
             is_elite = st.checkbox(f"Elite {unit_name}?", key=f"elite_{side_idx}")
 
-        # Age selector shown ONLY if age influences base unit stats
         age = 4
         if unit_name.lower() in AGE_DEPENDENT_UNITS:
             age = st.segmented_control(
@@ -831,50 +830,95 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         max_a_arm = 3 if ftt else c_info["max_a_arm"]
 
         base_unit = parse_unit(unit_name, is_elite, age)
-        is_inf, is_cav, is_arch, is_cav_arch, is_gun = get_unit_archetypes(unit_name, base_unit.armor_class)
-        is_melee = base_unit.m_attack is not None
-        is_ranged = base_unit.p_attack is not None
+        boost = base_unit.boost_tech.lower()
+
+        # Dynamic check: which upgrade lines apply to THIS unit based on wiki {{Boosts|Technologies}}
+        has_m_atk = any(k in boost for k in ["forging", "iron casting", "blast furnace"])
+        has_r_atk = any(k in boost for k in ["fletching", "bodkin arrow", "bracer"])
+        has_i_arm = any(k in boost for k in ["scale mail armor", "chain mail armor", "plate mail armor"])
+        has_c_arm = any(k in boost for k in ["scale barding armor", "chain barding armor", "plate barding armor"])
+        has_a_arm = any(k in boost for k in ["padded archer armor", "leather archer armor", "ring archer armor"])
+
+        has_bloodlines = "bloodlines" in boost
+        has_thumb_ring = "thumb ring" in boost
+        has_parthian = "parthian tactics" in boost
+        has_chemistry = "chemistry" in boost
+        has_gambesons = "gambesons" in boost
+        has_siege_engineers = "siege engineers" in boost
+        has_cranequins = "cranequins" in boost
+
+        # Unique techs affecting this unit
+        has_kataparuto = "kataparuto" in boost
+        has_warwolf = "warwolf" in boost
+        has_ironclad = "ironclad" in boost
+        has_furor = "furor celticus" in boost
+        has_recurve = "recurve bow" in boost
+        has_rocketry = "rocketry" in boost
+        has_garland = "garland wars" in boost
+        has_farimba = "farimba" in boost
+        has_wootz = "wootz steel" in boost
+        has_stirrups = "stirrups" in boost
+        has_hauberk = "hauberk" in boost
+        has_sipahi = "sipahi" in boost
+        has_el_dorado = "el dorado" in boost
+        has_chatras = "chatras" in boost
+        has_comitatenses = "comitatenses" in boost
+        has_bogsveigar = "bogsveigar" in boost
+        has_tower_shields = "tower shields" in boost
+        has_pavise = "pavise" in boost
+        has_silk_armor = "silk armor" in boost
+        has_fabric_shields = "fabric shields" in boost
+        has_bagains = "bagains" in boost
 
         if fu:
-            upgrades["m_atk_tier"] = max_m_atk
-            upgrades["m_atk_val"] = MELEE_ATK_VALUES[max_m_atk]
-            upgrades["r_atk_tier"] = max_r_atk
-            upgrades["r_atk_val"] = RANGED_ATK_VALUES[max_r_atk]
+            upgrades["m_atk_val"] = MELEE_ATK_VALUES[max_m_atk] if has_m_atk else 0
+            upgrades["r_atk_val"] = RANGED_ATK_VALUES[max_r_atk] if has_r_atk else 0
             
-            # Select relevant armor values
             m_arm_v, p_arm_v = 0, 0
-            if is_inf:
+            if has_i_arm:
                 m_arm_v, p_arm_v = INF_ARM_VALUES[max_i_arm]
-            elif is_cav:
+            elif has_c_arm:
                 m_arm_v, p_arm_v = CAV_ARM_VALUES[max_c_arm]
-            elif is_arch:
+            elif has_a_arm:
                 m_arm_v, p_arm_v = ARC_ARM_VALUES[max_a_arm]
                 
             upgrades["m_arm_val"] = m_arm_v
             upgrades["p_arm_val"] = p_arm_v
-            upgrades["bloodlines"] = True if (ftt or c_info["bloodlines"]) else False
-            upgrades["thumb_ring"] = True if (ftt or c_info["thumb_ring"]) else False
-            upgrades["parthian"] = True if (ftt or c_info["parthian"]) else False
-            upgrades["chemistry"] = True if (ftt or c_info["chemistry"]) else False
-            upgrades["gambesons"] = True if (ftt or c_info["gambesons"]) else False
+            upgrades["bloodlines"] = has_bloodlines and (ftt or c_info["bloodlines"])
+            upgrades["thumb_ring"] = has_thumb_ring and (ftt or c_info["thumb_ring"])
+            upgrades["parthian"] = has_parthian and (ftt or c_info["parthian"])
+            upgrades["chemistry"] = has_chemistry and (ftt or c_info["chemistry"])
+            upgrades["gambesons"] = has_gambesons and (ftt or c_info["gambesons"])
+            upgrades["siege_engineers"] = has_siege_engineers and (ftt or c_info.get("siege_engineers", True))
+            upgrades["cranequins"] = has_cranequins and (ftt or civ == "Burgundians")
             
-            # Unique techs under FU
-            upgrades["recurve_bow"] = (civ == "Magyars")
-            upgrades["rocketry"] = (civ == "Chinese")
-            upgrades["garland_wars"] = (civ == "Aztecs")
-            upgrades["farimba"] = (civ == "Malians")
-            upgrades["wootz_steel"] = (civ == "Dravidians")
-            upgrades["stirrups"] = (civ == "Bulgarians")
-            upgrades["hauberk"] = (civ == "Sicilians")
-            upgrades["sipahi"] = (civ == "Turks")
-            upgrades["el_dorado"] = (civ == "Mayans")
-            upgrades["chatras"] = (civ == "Vietnamese")
-            upgrades["comitatenses"] = (civ == "Romans")
+            # Civ Unique techs under FU
+            upgrades["kataparuto"] = has_kataparuto and (ftt or civ == "Japanese")
+            upgrades["warwolf"] = has_warwolf and (ftt or civ == "Britons")
+            upgrades["ironclad"] = has_ironclad and (ftt or civ == "Teutons")
+            upgrades["furor_celticus"] = has_furor and (ftt or civ == "Celts")
+            upgrades["recurve_bow"] = has_recurve and (ftt or civ == "Magyars")
+            upgrades["rocketry"] = has_rocketry and (ftt or civ == "Chinese")
+            upgrades["garland_wars"] = has_garland and (ftt or civ == "Aztecs")
+            upgrades["farimba"] = has_farimba and (ftt or civ == "Malians")
+            upgrades["wootz_steel"] = has_wootz and (ftt or civ == "Dravidians")
+            upgrades["stirrups"] = has_stirrups and (ftt or civ == "Bulgarians")
+            upgrades["hauberk"] = has_hauberk and (ftt or civ == "Sicilians")
+            upgrades["sipahi"] = has_sipahi and (ftt or civ == "Turks")
+            upgrades["el_dorado"] = has_el_dorado and (ftt or civ == "Mayans")
+            upgrades["chatras"] = has_chatras and (ftt or civ == "Vietnamese")
+            upgrades["comitatenses"] = has_comitatenses and (ftt or civ == "Romans")
+            upgrades["bogsveigar"] = has_bogsveigar and (ftt or civ == "Vikings")
+            upgrades["tower_shields"] = has_tower_shields and (ftt or civ == "Lithuanians")
+            upgrades["pavise"] = has_pavise and (ftt or civ == "Italians")
+            upgrades["silk_armor"] = has_silk_armor and (ftt or civ == "Tatars")
+            upgrades["fabric_shields"] = has_fabric_shields and (ftt or civ == "Incas")
+            upgrades["bagains"] = has_bagains and (ftt or civ == "Bulgarians")
         else:
             st.markdown("**Upgrades & Technologies:**")
             col_a, col_b = st.columns(2)
             with col_a:
-                if is_melee:
+                if has_m_atk:
                     opts = list(range(max_m_atk + 1))
                     tier = st.selectbox(
                         "Melee Attack",
@@ -883,12 +927,11 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                         format_func=lambda x: MELEE_ATK_NAMES[x],
                         key=f"m_atk_{side_idx}"
                     )
-                    upgrades["m_atk_tier"] = tier
                     upgrades["m_atk_val"] = MELEE_ATK_VALUES[tier]
                 else:
                     upgrades["m_atk_val"] = 0
 
-                if is_ranged:
+                if has_r_atk:
                     opts = list(range(max_r_atk + 1))
                     tier = st.selectbox(
                         "Ranged Attack",
@@ -897,14 +940,12 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                         format_func=lambda x: RANGED_ATK_NAMES[x],
                         key=f"r_atk_{side_idx}"
                     )
-                    upgrades["r_atk_tier"] = tier
                     upgrades["r_atk_val"] = RANGED_ATK_VALUES[tier]
                 else:
                     upgrades["r_atk_val"] = 0
 
-                # Armor selectors with full descriptive names
                 m_arm_v, p_arm_v = 0, 0
-                if is_inf:
+                if has_i_arm:
                     opts = list(range(max_i_arm + 1))
                     tier = st.selectbox(
                         "Infantry Armor",
@@ -914,7 +955,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                         key=f"i_arm_{side_idx}"
                     )
                     m_arm_v, p_arm_v = INF_ARM_VALUES[tier]
-                elif is_cav:
+                elif has_c_arm:
                     opts = list(range(max_c_arm + 1))
                     tier = st.selectbox(
                         "Cavalry Armor",
@@ -924,7 +965,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                         key=f"c_arm_{side_idx}"
                     )
                     m_arm_v, p_arm_v = CAV_ARM_VALUES[tier]
-                elif is_arch:
+                elif has_a_arm:
                     opts = list(range(max_a_arm + 1))
                     tier = st.selectbox(
                         "Archer Armor",
@@ -939,40 +980,64 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                 upgrades["p_arm_val"] = p_arm_v
 
             with col_b:
-                if is_cav and (ftt or c_info["bloodlines"]):
+                if has_bloodlines and (ftt or c_info["bloodlines"]):
                     upgrades["bloodlines"] = st.checkbox("Bloodlines (+20 HP)", key=f"bl_{side_idx}")
-                if is_arch and (ftt or c_info["thumb_ring"]):
-                    upgrades["thumb_ring"] = st.checkbox("Thumb Ring (100% Acc)", key=f"tr_{side_idx}")
-                if is_cav_arch and (ftt or c_info["parthian"]):
+                if has_thumb_ring and (ftt or c_info["thumb_ring"]):
+                    upgrades["thumb_ring"] = st.checkbox("Thumb Ring (Faster Fire Rate)", key=f"tr_{side_idx}")
+                if has_parthian and (ftt or c_info["parthian"]):
                     upgrades["parthian"] = st.checkbox("Parthian Tactics (+1/+2)", key=f"pt_{side_idx}")
-                if is_ranged and (ftt or c_info["chemistry"]):
+                if has_chemistry and (ftt or c_info["chemistry"]):
                     upgrades["chemistry"] = st.checkbox("Chemistry (+1 Attack)", key=f"chem_{side_idx}")
-                if is_inf and (ftt or c_info["gambesons"]):
+                if has_gambesons and (ftt or c_info["gambesons"]):
                     upgrades["gambesons"] = st.checkbox("Gambesons (+1 Pierce Armor)", key=f"gam_{side_idx}")
+                if has_siege_engineers and (ftt or c_info.get("siege_engineers", True)):
+                    upgrades["siege_engineers"] = st.checkbox("Siege Engineers (+20% vs Build)", key=f"se_{side_idx}")
+                if has_cranequins and (ftt or civ == "Burgundians"):
+                    upgrades["cranequins"] = st.checkbox("Cranequins (+1 Attack)", key=f"cran_{side_idx}")
 
-            # Relevant Unique Techs
-            if civ == "Magyars" and is_cav_arch:
+            # Specific unique techs dynamically checked against unit's boost_tech
+            if has_kataparuto and (ftt or civ == "Japanese"):
+                upgrades["kataparuto"] = st.checkbox("Kataparuto (Fires & Packs 33% Faster)", key=f"kata_{side_idx}")
+            if has_warwolf and (ftt or civ == "Britons"):
+                upgrades["warwolf"] = st.checkbox("Warwolf (100% Blast Radius)", key=f"ww_{side_idx}")
+            if has_ironclad and (ftt or civ == "Teutons"):
+                upgrades["ironclad"] = st.checkbox("Ironclad (+4 Melee Armor)", key=f"ic_{side_idx}")
+            if has_furor and (ftt or civ == "Celts"):
+                upgrades["furor_celticus"] = st.checkbox("Furor Celticus (+40% HP)", key=f"fc_{side_idx}")
+            if has_recurve and (ftt or civ == "Magyars"):
                 upgrades["recurve_bow"] = st.checkbox("Recurve Bow (+1 Atk/Range)", key=f"rb_{side_idx}")
-            if civ == "Chinese" and "chu ko nu" in unit_name.lower():
-                upgrades["rocketry"] = st.checkbox("Rocketry (+2 Attack)", key=f"rock_{side_idx}")
-            if civ == "Aztecs" and is_inf:
+            if has_rocketry and (ftt or civ == "Chinese"):
+                upgrades["rocketry"] = st.checkbox("Rocketry (+Attack)", key=f"rock_{side_idx}")
+            if has_garland and (ftt or civ == "Aztecs"):
                 upgrades["garland_wars"] = st.checkbox("Garland Wars (+4 Attack)", key=f"gw_{side_idx}")
-            if civ == "Malians" and is_cav:
+            if has_farimba and (ftt or civ == "Malians"):
                 upgrades["farimba"] = st.checkbox("Farimba (+5 Attack)", key=f"far_{side_idx}")
-            if civ == "Dravidians" and (is_inf or is_cav):
+            if has_wootz and (ftt or civ == "Dravidians"):
                 upgrades["wootz_steel"] = st.checkbox("Wootz Steel (Ignore Armor)", key=f"ws_{side_idx}")
-            if civ == "Bulgarians" and is_cav:
+            if has_stirrups and (ftt or civ == "Bulgarians"):
                 upgrades["stirrups"] = st.checkbox("Stirrups (+33% Atk Speed)", key=f"stirr_{side_idx}")
-            if civ == "Sicilians" and "knight" in unit_name.lower():
+            if has_hauberk and (ftt or civ == "Sicilians"):
                 upgrades["hauberk"] = st.checkbox("Hauberk (+1/+2 Armor)", key=f"haub_{side_idx}")
-            if civ == "Turks" and is_cav_arch:
+            if has_sipahi and (ftt or civ == "Turks"):
                 upgrades["sipahi"] = st.checkbox("Sipahi (+20 HP)", key=f"sip_{side_idx}")
-            if civ == "Mayans" and "eagle" in unit_name.lower():
+            if has_el_dorado and (ftt or civ == "Mayans"):
                 upgrades["el_dorado"] = st.checkbox("El Dorado (+40 HP)", key=f"eld_{side_idx}")
-            if civ == "Vietnamese" and "battle elephant" in unit_name.lower():
+            if has_chatras and (ftt or civ == "Vietnamese"):
                 upgrades["chatras"] = st.checkbox("Chatras (+100 HP)", key=f"chat_{side_idx}")
-            if civ == "Romans" and ("legionary" in unit_name.lower() or "centurion" in unit_name.lower() or "knight" in unit_name.lower()):
+            if has_comitatenses and (ftt or civ == "Romans"):
                 upgrades["comitatenses"] = st.checkbox("Comitatenses (+5 Charge Attack)", key=f"com_{side_idx}")
+            if has_bogsveigar and (ftt or civ == "Vikings"):
+                upgrades["bogsveigar"] = st.checkbox("Bogsveigar (+1 Attack)", key=f"bog_{side_idx}")
+            if has_tower_shields and (ftt or civ == "Lithuanians"):
+                upgrades["tower_shields"] = st.checkbox("Tower Shields (+2 Pierce Armor)", key=f"ts_{side_idx}")
+            if has_pavise and (ftt or civ == "Italians"):
+                upgrades["pavise"] = st.checkbox("Pavise (+1/+1 Armor)", key=f"pav_{side_idx}")
+            if has_silk_armor and (ftt or civ == "Tatars"):
+                upgrades["silk_armor"] = st.checkbox("Silk Armor (+1/+1 Armor)", key=f"sa_{side_idx}")
+            if has_fabric_shields and (ftt or civ == "Incas"):
+                upgrades["fabric_shields"] = st.checkbox("Fabric Shields (+1/+2 Armor)", key=f"fs_{side_idx}")
+            if has_bagains and (ftt or civ == "Bulgarians"):
+                upgrades["bagains"] = st.checkbox("Bagains (+5 Melee Armor)", key=f"bag_{side_idx}")
 
         return base_unit, civ, upgrades, True
 
@@ -982,8 +1047,8 @@ def main():
     st.markdown("Calculate 1v1 battles with civilization bonuses, full tech tree overrides, unique unit mechanics, and Patch 185872 DLCs.")
 
     col1, col2 = st.columns(2)
-    u1, civ1, up1, ok1 = render_unit_config(col1, 1, "Japanese", "Pikeman")
-    u2, civ2, up2, ok2 = render_unit_config(col2, 2, "Franks", "Pikeman")
+    u1, civ1, up1, ok1 = render_unit_config(col1, 1, "Japanese", "Trebuchet")
+    u2, civ2, up2, ok2 = render_unit_config(col2, 2, "Britons", "Trebuchet")
 
     st.divider()
 

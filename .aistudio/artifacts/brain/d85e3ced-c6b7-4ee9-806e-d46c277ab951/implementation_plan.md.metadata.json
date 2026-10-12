@@ -1,6 +1,6 @@
 {
-  "summary":  "Revised implementation plan incorporating Age of Empires II: DE Patch 185872, including The Viking Sagas DLC (Danes, Saxons, Varangians), The Last Chieftains DLC (Mapuche, Muisca, Tupi), The Mountain Royals (Armenians, Georgians), Return of Rome (Romans), Dynasties of India, Dawn of the Dukes, and Lords of the West, with all new units and regional additions (Varangian Guard, Mounted Crossbowman, Jomsviking, Hearth Troop, Bolas Rider, Kona, Guecha Warrior, Ibirapema Warrior).",
-  "updatedAt":  "2026-10-11T07:33:54.122787557Z",
+  "summary":  "Revised implementation plan for AoE2 1v1 Battle Calculator Streamlit app, incorporating dynamic wiki Boosts technology extraction, strict tech tree enforcement (including Winged Hussar replacements and Lithuanian/Pole exclusions), accurate Thumb Ring attack interval reduction, and unit-specific unique tech integration.",
+  "updatedAt":  "2026-10-12T11:22:05.047360533Z",
   "requestFeedback":  true,
   "userFacing":  true
 }
