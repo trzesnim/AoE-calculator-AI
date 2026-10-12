@@ -13,6 +13,7 @@ import streamlit as st
 # - Dynasties of India (Bengalis, Dravidians, Gurjaras, Hindustanis)
 # - Dawn of the Dukes (Bohemians, Poles)
 # - Lords of the West (Burgundians, Sicilians)
+# - Full Naval Fleet (Warships, Unique Vessels, and Civilian Ships)
 # ==============================================================================
 
 CIVILIZATIONS = [
@@ -47,97 +48,101 @@ UNITS = [
     "Arambai", "Arbalester", "Archer", "Armored Elephant", "Ballista Elephant",
     "Battering Ram", "Battle Elephant", "Berserk", "Blackwood Archer", "Bolas Rider",
     "Bombard Cannon", "Boyar", "Camel Archer", "Camel Rider", "Camel Scout",
-    "Capped Ram", "Cataphract", "Cavalier", "Cavalry Archer", "Centurion",
-    "Chakram Thrower", "Champion", "Chu Ko Nu", "Composite Bowman", "Condottiero",
-    "Conquistador", "Coustillier", "Crossbowman", "Eagle Scout", "Eagle Warrior",
-    "Elephant Archer", "Elite Battle Elephant", "Elite Eagle Warrior",
-    "Elite Elephant Archer", "Elite Skirmisher", "Elite Steppe Lancer", "Flemish Militia",
-    "Gbeto", "Genitour", "Genoese Crossbowman", "Ghulam", "Guecha Warrior",
-    "Halberdier", "Hand Cannoneer", "Hearth Troop", "Heavy Camel Rider",
-    "Heavy Cavalry Archer", "Heavy Scorpion", "Houfnice", "Huskarl", "Hussar",
-    "Hussite Wagon", "Ibirapema Warrior", "Imperial Camel Rider",
-    "Imperial Skirmisher", "Janissary", "Jian Swordsman", "Jomsviking",
-    "Kamayuk", "Karambit Warrior", "Keshik", "Kipchak", "Knight", "Kona",
-    "Konnik", "Legionary", "Leitis", "Light Cavalry", "Long Swordsman",
-    "Longbowman", "Magyar Huszar", "Mameluke", "Man-at-Arms", "Mangonel",
-    "Mangudai", "Militia", "Missionary", "Monaspa", "Monk", "Mounted Crossbowman",
-    "Obuch", "Onager", "Organ Gun", "Paladin", "Pikeman", "Plumed Archer",
-    "Ratha", "Rattan Archer", "Samurai", "Savar", "Scorpion", "Scout Cavalry",
-    "Serjeant", "Shotel Warrior", "Shrivamsha Rider", "Siege Elephant",
-    "Siege Onager", "Siege Ram", "Siege Tower", "Skirmisher", "Slinger",
-    "Spearman", "Steppe Lancer", "Teutonic Knight", "Throwing Axeman",
-    "Trade Cart", "Trebuchet", "Two-Handed Swordsman", "Urumi Swordsman",
-    "Varangian Guard", "Villager", "War Elephant", "War Wagon", "Warrior Priest",
-    "Winged Hussar", "Woad Raider", "Xianbei Raider"
+    "Cannon Galleon", "Capped Ram", "Caravel", "Cataphract", "Cavalier",
+    "Cavalry Archer", "Centurion", "Chakram Thrower", "Champion", "Chu Ko Nu",
+    "Composite Bowman", "Condottiero", "Conquistador", "Coustillier", "Crossbowman",
+    "Demolition Raft", "Demolition Ship", "Dromon", "Eagle Scout", "Eagle Warrior",
+    "Elephant Archer", "Elite Battle Elephant", "Elite Cannon Galleon", "Elite Caravel",
+    "Elite Eagle Warrior", "Elite Elephant Archer", "Elite Longship", "Elite Skirmisher",
+    "Elite Steppe Lancer", "Elite Turtle Ship", "Fast Fire Ship", "Fire Galley",
+    "Fire Ship", "Fishing Ship", "Flemish Militia", "Galley", "Galleon", "Gbeto",
+    "Genitour", "Genoese Crossbowman", "Ghulam", "Guecha Warrior", "Halberdier",
+    "Hand Cannoneer", "Hearth Troop", "Heavy Camel Rider", "Heavy Cavalry Archer",
+    "Heavy Demolition Ship", "Heavy Scorpion", "Houfnice", "Huskarl", "Hussar",
+    "Hussite Wagon", "Ibirapema Warrior", "Imperial Camel Rider", "Imperial Skirmisher",
+    "Janissary", "Jian Swordsman", "Jomsviking", "Kamayuk", "Karambit Warrior",
+    "Keshik", "Kipchak", "Knight", "Kona", "Konnik", "Legionary", "Leitis",
+    "Light Cavalry", "Long Swordsman", "Longbowman", "Longship", "Magyar Huszar",
+    "Mameluke", "Man-at-Arms", "Mangonel", "Mangudai", "Militia", "Missionary",
+    "Monaspa", "Monk", "Mounted Crossbowman", "Obuch", "Onager", "Organ Gun",
+    "Paladin", "Pikeman", "Plumed Archer", "Ratha", "Rattan Archer", "Samurai",
+    "Savar", "Scorpion", "Scout Cavalry", "Serjeant", "Shotel Warrior",
+    "Shrivamsha Rider", "Siege Elephant", "Siege Onager", "Siege Ram", "Siege Tower",
+    "Skirmisher", "Slinger", "Spearman", "Steppe Lancer", "Teutonic Knight",
+    "Thirisadai", "Throwing Axeman", "Trade Cart", "Trade Cog", "Transport Ship",
+    "Trebuchet", "Turtle Ship", "Two-Handed Swordsman", "Urumi Swordsman",
+    "Varangian Guard", "Villager", "War Elephant", "War Galley", "War Wagon",
+    "Warrior Priest", "Winged Hussar", "Woad Raider", "Xianbei Raider"
 ]
 
 ELITE_UNITS = [
     "Arambai", "Ballista Elephant", "Berserk", "Bolas Rider", "Boyar", "Camel Archer",
-    "Cataphract", "Centurion", "Chakram Thrower", "Chu Ko Nu", "Composite Bowman",
-    "Conquistador", "Coustillier", "Gbeto", "Genitour", "Genoese Crossbowman",
-    "Ghulam", "Guecha Warrior", "Hearth Troop", "Huskarl", "Hussite Wagon",
-    "Ibirapema Warrior", "Janissary", "Jomsviking", "Kamayuk", "Karambit Warrior",
-    "Keshik", "Kipchak", "Kona", "Konnik", "Leitis", "Longbowman", "Magyar Huszar",
-    "Mameluke", "Mangudai", "Monaspa", "Obuch", "Organ Gun", "Plumed Archer",
-    "Ratha", "Rattan Archer", "Samurai", "Serjeant", "Shotel Warrior",
-    "Shrivamsha Rider", "Teutonic Knight", "Throwing Axeman", "Urumi Swordsman",
-    "Varangian Guard", "War Elephant", "War Wagon", "Woad Raider", "Xianbei Raider"
+    "Cannon Galleon", "Caravel", "Cataphract", "Centurion", "Chakram Thrower",
+    "Chu Ko Nu", "Composite Bowman", "Conquistador", "Coustillier", "Gbeto",
+    "Genitour", "Genoese Crossbowman", "Ghulam", "Guecha Warrior", "Hearth Troop",
+    "Huskarl", "Hussite Wagon", "Ibirapema Warrior", "Janissary", "Jomsviking",
+    "Kamayuk", "Karambit Warrior", "Keshik", "Kipchak", "Kona", "Konnik",
+    "Leitis", "Longbowman", "Longship", "Magyar Huszar", "Mameluke", "Mangudai",
+    "Monaspa", "Obuch", "Organ Gun", "Plumed Archer", "Ratha", "Rattan Archer",
+    "Samurai", "Serjeant", "Shotel Warrior", "Shrivamsha Rider", "Teutonic Knight",
+    "Throwing Axeman", "Turtle Ship", "Urumi Swordsman", "Varangian Guard",
+    "War Elephant", "War Wagon", "Woad Raider", "Xianbei Raider"
 ]
 
 # Civilization tech tree maximums and tech allowances
 CIV_DATA = {
-    "Generic": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Armenians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Aztecs": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": False, "siege_engineers": True},
-    "Bengalis": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Berbers": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": False, "siege_engineers": True},
-    "Bohemians": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Britons": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Bulgarians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Burgundians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Burmese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 1, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Byzantines": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Celts": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Chinese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Cumans": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": False, "gambesons": True, "siege_engineers": True},
-    "Danes": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Dravidians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 1, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Ethiopians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Franks": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Georgians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Goths": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Gurjaras": {"max_m_atk": 2, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Hindustanis": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Huns": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "siege_engineers": True},
-    "Incas": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Italians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Japanese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Khmer": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": True, "gambesons": False, "siege_engineers": True},
-    "Koreans": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Lithuanians": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Magyars": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "siege_engineers": True},
-    "Malay": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 1, "max_i_arm": 2, "bloodlines": False, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Malians": {"max_m_atk": 2, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Mapuche": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Mayans": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Mongols": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Muisca": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Persians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Poles": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Portuguese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Romans": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": False, "gambesons": True, "siege_engineers": True},
-    "Saracens": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Saxons": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Sicilians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Slavs": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Spanish": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Tatars": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "siege_engineers": True},
-    "Teutons": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Tupi": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 0, "max_i_arm": 2, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Turks": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Varangians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Vietnamese": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
-    "Vikings": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "siege_engineers": True},
+    "Generic": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Armenians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True},
+    "Aztecs": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Bengalis": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Berbers": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Bohemians": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True},
+    "Britons": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Bulgarians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True},
+    "Burgundians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Burmese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 1, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Byzantines": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Celts": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True},
+    "Chinese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Cumans": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": False, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True},
+    "Danes": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Dravidians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 1, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Ethiopians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Franks": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Georgians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Goths": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Gurjaras": {"max_m_atk": 2, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Hindustanis": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Huns": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": False, "siege_engineers": True},
+    "Incas": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Italians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Japanese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Khmer": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Koreans": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Lithuanians": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Magyars": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Malay": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 1, "max_i_arm": 2, "bloodlines": False, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Malians": {"max_m_atk": 2, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Mapuche": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Mayans": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Mongols": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True},
+    "Muisca": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True},
+    "Persians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Poles": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Portuguese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Romans": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": False, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Saracens": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Saxons": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Sicilians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True},
+    "Slavs": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True},
+    "Spanish": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Tatars": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Teutons": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Tupi": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 0, "max_i_arm": 2, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Turks": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Varangians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Vietnamese": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Vikings": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
 }
 
 EXCLUSIVE_UNIQUE_UNITS = {
@@ -147,6 +152,7 @@ EXCLUSIVE_UNIQUE_UNITS = {
     "Bolas Rider": ["Mapuche"],
     "Boyar": ["Slavs"],
     "Camel Archer": ["Berbers"],
+    "Caravel": ["Portuguese"],
     "Cataphract": ["Byzantines"],
     "Centurion": ["Romans"],
     "Chakram Thrower": ["Gurjaras"],
@@ -174,6 +180,7 @@ EXCLUSIVE_UNIQUE_UNITS = {
     "Legionary": ["Romans"],
     "Leitis": ["Lithuanians"],
     "Longbowman": ["Britons"],
+    "Longship": ["Vikings", "Danes", "Saxons", "Varangians"],
     "Magyar Huszar": ["Magyars"],
     "Mameluke": ["Saracens"],
     "Mangudai": ["Mongols"],
@@ -191,7 +198,9 @@ EXCLUSIVE_UNIQUE_UNITS = {
     "Shrivamsha Rider": ["Gurjaras"],
     "Slinger": ["Incas"],
     "Teutonic Knight": ["Teutons"],
+    "Thirisadai": ["Dravidians"],
     "Throwing Axeman": ["Franks"],
+    "Turtle Ship": ["Koreans"],
     "Urumi Swordsman": ["Dravidians"],
     "Varangian Guard": ["Varangians", "Byzantines"],
     "War Elephant": ["Persians"],
@@ -203,8 +212,6 @@ EXCLUSIVE_UNIQUE_UNITS = {
 
 NO_STABLE_CIVS = ["Aztecs", "Incas", "Mayans", "Muisca", "Tupi"]
 
-# Strict unit availability restrictions across all 52 civilizations
-# Note: Lithuanians & Poles get Winged Hussar, NOT standard Hussar!
 UNIT_RESTRICTIONS = {
     "Cavalry Archer": {
         "banned": ["Aztecs", "Britons", "Burgundians", "Celts", "Franks", "Incas", "Mayans", "Muisca", "Teutons", "Tupi", "Vikings", "Armenians", "Bohemians"]
@@ -281,14 +288,26 @@ UNIT_RESTRICTIONS = {
     "Mounted Crossbowman": {
         "allowed": ["Bohemians", "Britons", "Burgundians", "Franks", "Lithuanians", "Magyars", "Poles", "Portuguese", "Romans", "Saxons", "Sicilians", "Slavs"]
     },
-    "Siege Onager": {
-        "allowed": ["Aztecs", "Celts", "Ethiopians", "Koreans", "Malians", "Mongols", "Saracens", "Slavs", "Teutons"]
-    },
-    "Siege Ram": {
-        "banned": ["Britons", "Burmese", "Franks", "Goths", "Japanese", "Koreans", "Lithuanians", "Malians", "Portuguese", "Teutons", "Turks", "Vietnamese", "Vikings"]
-    },
     "Houfnice": {
         "allowed": ["Bohemians"]
+    },
+    "Dromon": {
+        "allowed": ["Romans", "Byzantines", "Armenians", "Goths", "Huns"]
+    },
+    "Cannon Galleon": {
+        "banned": ["Romans", "Byzantines", "Armenians", "Goths", "Huns", "Aztecs", "Incas", "Mayans", "Muisca", "Tupi"]
+    },
+    "Elite Cannon Galleon": {
+        "banned": ["Romans", "Byzantines", "Armenians", "Goths", "Huns", "Aztecs", "Incas", "Mayans", "Muisca", "Tupi", "Britons", "Celts", "Chinese", "Cumans", "Ethiopians", "Japanese", "Malay", "Mongols", "Sicilians", "Slavs", "Tatars", "Vikings"]
+    },
+    "Galleon": {
+        "banned": ["Aztecs", "Malians"]
+    },
+    "Fast Fire Ship": {
+        "banned": ["Aztecs", "Celts", "Chinese", "Cumans", "Dravidians", "Ethiopians", "Goths", "Huns", "Incas", "Malay", "Malians", "Mayans", "Mongols", "Poles", "Portuguese", "Slavs", "Vikings"]
+    },
+    "Heavy Demolition Ship": {
+        "banned": ["Aztecs", "Burmese", "Byzantines", "Incas", "Italians", "Japanese", "Khmer", "Koreans", "Mayans", "Persians", "Romans", "Spanish"]
     }
 }
 
@@ -352,6 +371,8 @@ def fetch_wiki_unit(unit_name: str):
         title = "Villager_(Age_of_Empires_II)"
     elif title == "Trebuchet":
         title = "Trebuchet_(Age_of_Empires_II)"
+    elif title in ["Galley", "War_Galley", "Galleon", "Fire_Ship", "Demolition_Ship", "Cannon_Galleon"]:
+        title = f"{title}_(Age_of_Empires_II)"
     url = f"https://ageofempires.fandom.com/api.php?action=query&prop=revisions&titles={title}&rvprop=content&formatversion=2&format=json"
     try:
         r = requests.get(url, timeout=5).json()
@@ -370,7 +391,7 @@ def fetch_wiki_unit(unit_name: str):
     except Exception:
         return None, ""
 
-# Curated unit baseline fallbacks for Patch 185872 with exact historical boost technologies
+# Curated unit baseline fallbacks for Patch 185872 including complete naval fleet
 CURATED_UNITS = {
     "Trebuchet": (150, 200, None, 10.0, 2, 8, {"Building": 250}, ["Siege weapon"], "Kataparuto, Warwolf, Ironclad, Furor Celticus, Siege Engineers"),
     "Knight": (100, None, 10, 1.8, 2, 2, {}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines, Hauberk, Stirrups, Farimba, Wootz Steel, Comitatenses"),
@@ -408,11 +429,43 @@ CURATED_UNITS = {
     "Mounted Crossbowman": (50, 6, None, 2.1, 0, 1, {}, ["Cavalry", "Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Bloodlines"),
     "Monk": (30, None, None, 5.5, 0, 0, {}, ["Monk"], ""),
     "Villager": (25, None, 3, 2.03, 0, 0, {}, [], "Supremacy, Loom, Wheelbarrow, Hand Cart"),
-    "Trade Cart": (70, None, None, 2.0, 0, 0, {}, [], "")
+    "Trade Cart": (70, None, None, 2.0, 0, 0, {}, [], ""),
+    # Naval Ships
+    "Galley": (120, 6, None, 3.0, 0, 6, {"Ship": 6, "Building": 6}, ["Ship"], "Fletching, Bodkin Arrow, Bracer, Chemistry, Careening, Dry Dock"),
+    "War Galley": (135, 7, None, 3.0, 0, 6, {"Ship": 7, "Building": 7}, ["Ship"], "Fletching, Bodkin Arrow, Bracer, Chemistry, Careening, Dry Dock"),
+    "Galleon": (165, 8, None, 3.0, 0, 8, {"Ship": 8, "Building": 8}, ["Ship"], "Fletching, Bodkin Arrow, Bracer, Chemistry, Careening, Dry Dock"),
+    "Fire Galley": (100, 1, None, 0.25, 0, 4, {"Ship": 3, "Building": 1}, ["Ship"], "Careening, Dry Dock"),
+    "Fire Ship": (120, 2, None, 0.25, 0, 6, {"Ship": 4, "Building": 2}, ["Ship"], "Careening, Dry Dock"),
+    "Fast Fire Ship": (140, 3, None, 0.25, 0, 8, {"Ship": 5, "Building": 3}, ["Ship"], "Careening, Dry Dock"),
+    "Demolition Raft": (45, 90, None, 0.0, 0, 1, {"Ship": 110, "Building": 110}, ["Ship"], "Careening, Dry Dock"),
+    "Demolition Ship": (60, 110, None, 0.0, 0, 2, {"Ship": 130, "Building": 130}, ["Ship"], "Careening, Dry Dock"),
+    "Heavy Demolition Ship": (70, 140, None, 0.0, 0, 3, {"Ship": 160, "Building": 160}, ["Ship"], "Careening, Dry Dock"),
+    "Cannon Galleon": (120, 35, None, 10.0, 0, 6, {"Building": 200, "Siege weapon": 25}, ["Ship", "Gunpowder unit"], "Careening, Dry Dock, Artillery"),
+    "Elite Cannon Galleon": (150, 45, None, 10.0, 0, 8, {"Building": 275, "Siege weapon": 40}, ["Ship", "Gunpowder unit"], "Careening, Dry Dock, Artillery"),
+    "Dromon": (125, 50, None, 7.0, 1, 6, {"Building": 135, "Siege weapon": 20}, ["Ship", "Siege weapon"], "Careening, Dry Dock"),
+    "Longship": (130, 7, None, 3.0, 0, 6, {"Ship": 7, "Building": 7}, ["Ship", "Unique unit"], "Fletching, Bodkin Arrow, Bracer, Chemistry, Careening, Dry Dock, Bogsveigar"),
+    "Elite Longship": (160, 8, None, 3.0, 0, 7, {"Ship": 8, "Building": 8}, ["Ship", "Unique unit"], "Fletching, Bodkin Arrow, Bracer, Chemistry, Careening, Dry Dock, Bogsveigar"),
+    "Turtle Ship": (200, 50, None, 6.0, 6, 5, {"Ship": 0}, ["Ship", "Unique unit"], "Careening, Dry Dock, Panokseon"),
+    "Elite Turtle Ship": (300, 50, None, 6.0, 8, 6, {"Ship": 0}, ["Ship", "Unique unit"], "Careening, Dry Dock, Panokseon"),
+    "Caravel": (130, 6, None, 3.0, 0, 8, {"Ship": 6, "Building": 6}, ["Ship", "Unique unit"], "Fletching, Bodkin Arrow, Bracer, Chemistry, Careening, Dry Dock, Carracks"),
+    "Elite Caravel": (150, 8, None, 3.0, 0, 8, {"Ship": 7, "Building": 7}, ["Ship", "Unique unit"], "Fletching, Bodkin Arrow, Bracer, Chemistry, Careening, Dry Dock, Carracks"),
+    "Thirisadai": (175, 4, None, 0.25, 0, 8, {"Ship": 5}, ["Ship", "Unique unit"], "Careening, Dry Dock"),
+    "Fishing Ship": (60, None, None, 2.0, 0, 4, {}, ["Ship", "Fishing Ship"], "Careening, Dry Dock"),
+    "Trade Cog": (80, None, None, 2.0, 0, 6, {}, ["Ship"], "Careening, Dry Dock"),
+    "Transport Ship": (100, None, None, 2.0, 0, 8, {}, ["Ship"], "Careening, Dry Dock")
 }
 
 def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
     norm = unit_name.lower()
+
+    # Flemish Militia stats updated to current AoE2 DE patch:
+    # Feudal (and Dark Age fallback): 40 HP, 6 attack, 0/1 armor
+    # Castle: 55 HP, 8 attack, 1/1 armor
+    # Imperial: 60 HP, 10 attack, 1/1 armor
+    if "flemish militia" in norm:
+        stats = {1: (40, 6, 0, 1), 2: (40, 6, 0, 1), 3: (55, 8, 1, 1), 4: (60, 10, 1, 1)}
+        hp, atk, arm, parm = stats.get(age, (60, 10, 1, 1))
+        return Unit("Flemish Militia", hp, m_attack=atk, rof=2.0, armor=arm, pierce_armor=parm, attack_bonus={"Cavalry": 8, "Camel": 6}, armor_class=["Infantry"], boost_tech="Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons", elite=is_elite)
 
     if "serjeant" in norm:
         if age <= 2:
@@ -421,11 +474,6 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
             return Unit("Serjeant", 60, m_attack=8, rof=2.0, armor=2, pierce_armor=2, armor_class=["Infantry", "Unique unit"], boost_tech="Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons", elite=is_elite)
         else:
             return Unit("Elite Serjeant" if is_elite else "Serjeant", 75 if is_elite else 60, m_attack=11 if is_elite else 8, rof=2.0, armor=3 if is_elite else 2, pierce_armor=3 if is_elite else 2, armor_class=["Infantry", "Unique unit"], boost_tech="Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons", elite=is_elite)
-
-    if "flemish militia" in norm:
-        stats = {1: (40, 4, 0, 0), 2: (50, 6, 0, 1), 3: (65, 9, 1, 1), 4: (75, 12, 1, 1)}
-        hp, atk, arm, parm = stats.get(age, (75, 12, 1, 1))
-        return Unit("Flemish Militia", hp, m_attack=atk, rof=2.0, armor=arm, pierce_armor=parm, attack_bonus={"Cavalry": 8, "Camel": 6}, armor_class=["Infantry"], boost_tech="Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons", elite=is_elite)
 
     if "scout cavalry" in norm:
         atk = 3 if age <= 1 else (5 if age == 2 else 5)
@@ -437,7 +485,6 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
 
     content, boost_tech = fetch_wiki_unit(unit_name)
 
-    # Combine wiki boost_tech with curated list for comprehensive coverage
     curated_boost = CURATED_UNITS.get(unit_name, ("", "", "", "", "", "", "", "", ""))[8]
     if curated_boost:
         boost_tech = f"{boost_tech}, {curated_boost}"
@@ -525,19 +572,21 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
         hp = int(hp * 1.4)
 
     rof = u.rof
-    # Civ attack speed bonuses
     if civ == "Japanese" and any(c in u.armor_class for c in ["Infantry"]):
         rof *= 0.75
     elif civ == "Mongols" and any(c in u.armor_class for c in ["Cavalry archer"]):
         rof *= 0.80
     elif civ == "Hindustanis" and any(c in u.armor_class for c in ["Camel"]):
         rof *= 0.833
+    elif civ == "Saracens" and any(c in u.armor_class for c in ["Ship"]) and any(w in u.name.lower() for w in ["galley", "galleon"]):
+        rof *= 0.80
+    elif civ == "Byzantines" and "fire" in u.name.lower():
+        rof *= 0.80
     elif up.get("stirrups") and any(c in u.armor_class for c in ["Cavalry"]):
         rof *= 0.75
     elif up.get("kataparuto") and "trebuchet" in u.name.lower():
         rof *= 0.75
 
-    # Thumb Ring increases fire rate: Foot archers ~18% faster (0.85x), Cav Archers ~11% faster (0.90x)
     if up.get("thumb_ring"):
         if any(c in u.armor_class for c in ["Cavalry archer"]):
             rof *= 0.90
@@ -565,7 +614,7 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
             p_atk += 2
         if up.get("rocketry") and "scorpion" in u.name.lower():
             p_atk += 4
-        if up.get("bogsveigar") and any(c in u.armor_class for c in ["Archer"]):
+        if up.get("bogsveigar") and any(c in u.armor_class for c in ["Archer", "Ship"]):
             p_atk += 1
         if up.get("cranequins") and any(c in u.name.lower() for c in ["crossbowman", "arbalester"]):
             p_atk += 1
@@ -579,6 +628,11 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
     if civ == "Malians" and any(c in u.armor_class for c in ["Infantry"]):
         p_arm += 3
     if up.get("gambesons") and any(c in u.armor_class for c in ["Infantry"]):
+        p_arm += 1
+    if up.get("careening") and any(c in u.armor_class for c in ["Ship"]):
+        p_arm += 1
+    if up.get("carracks") and any(c in u.armor_class for c in ["Ship"]):
+        m_arm += 1
         p_arm += 1
     if up.get("parthian") and any(c in u.armor_class for c in ["Cavalry archer"]):
         m_arm += 1
@@ -647,6 +701,10 @@ def format_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -
     if up.get("thumb_ring"):
         rate_txt = "11% Faster Attack" if "cavalry archer" in str(u.armor_class).lower() else "18% Faster Attack"
         special.append(f"Thumb Ring ({rate_txt})")
+    if up.get("careening"):
+        special.append("Careening (+1 Pierce Armor)")
+    if up.get("carracks"):
+        special.append("Carracks (+1/+1 Ship Armor)")
     if civ == "Sicilians":
         special.append("Takes 33% Less Bonus Damage")
     if civ == "Romans" and any(c in u.armor_class for c in ["Infantry"]):
@@ -832,7 +890,6 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         base_unit = parse_unit(unit_name, is_elite, age)
         boost = base_unit.boost_tech.lower()
 
-        # Dynamic check: which upgrade lines apply to THIS unit based on wiki {{Boosts|Technologies}}
         has_m_atk = any(k in boost for k in ["forging", "iron casting", "blast furnace"])
         has_r_atk = any(k in boost for k in ["fletching", "bodkin arrow", "bracer"])
         has_i_arm = any(k in boost for k in ["scale mail armor", "chain mail armor", "plate mail armor"])
@@ -844,10 +901,11 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         has_parthian = "parthian tactics" in boost
         has_chemistry = "chemistry" in boost
         has_gambesons = "gambesons" in boost
+        has_careening = "careening" in boost
+        has_dry_dock = "dry dock" in boost
         has_siege_engineers = "siege engineers" in boost
         has_cranequins = "cranequins" in boost
 
-        # Unique techs affecting this unit
         has_kataparuto = "kataparuto" in boost
         has_warwolf = "warwolf" in boost
         has_ironclad = "ironclad" in boost
@@ -869,6 +927,9 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         has_silk_armor = "silk armor" in boost
         has_fabric_shields = "fabric shields" in boost
         has_bagains = "bagains" in boost
+        has_carracks = "carracks" in boost
+        has_panokseon = "panokseon" in boost
+        has_artillery = "artillery" in boost
 
         if fu:
             upgrades["m_atk_val"] = MELEE_ATK_VALUES[max_m_atk] if has_m_atk else 0
@@ -889,10 +950,11 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
             upgrades["parthian"] = has_parthian and (ftt or c_info["parthian"])
             upgrades["chemistry"] = has_chemistry and (ftt or c_info["chemistry"])
             upgrades["gambesons"] = has_gambesons and (ftt or c_info["gambesons"])
+            upgrades["careening"] = has_careening and (ftt or c_info.get("careening", True))
+            upgrades["dry_dock"] = has_dry_dock and (ftt or c_info.get("dry_dock", True))
             upgrades["siege_engineers"] = has_siege_engineers and (ftt or c_info.get("siege_engineers", True))
             upgrades["cranequins"] = has_cranequins and (ftt or civ == "Burgundians")
             
-            # Civ Unique techs under FU
             upgrades["kataparuto"] = has_kataparuto and (ftt or civ == "Japanese")
             upgrades["warwolf"] = has_warwolf and (ftt or civ == "Britons")
             upgrades["ironclad"] = has_ironclad and (ftt or civ == "Teutons")
@@ -914,6 +976,9 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
             upgrades["silk_armor"] = has_silk_armor and (ftt or civ == "Tatars")
             upgrades["fabric_shields"] = has_fabric_shields and (ftt or civ == "Incas")
             upgrades["bagains"] = has_bagains and (ftt or civ == "Bulgarians")
+            upgrades["carracks"] = has_carracks and (ftt or civ == "Portuguese")
+            upgrades["panokseon"] = has_panokseon and (ftt or civ == "Koreans")
+            upgrades["artillery"] = has_artillery and (ftt or civ == "Turks")
         else:
             st.markdown("**Upgrades & Technologies:**")
             col_a, col_b = st.columns(2)
@@ -990,12 +1055,15 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                     upgrades["chemistry"] = st.checkbox("Chemistry (+1 Attack)", key=f"chem_{side_idx}")
                 if has_gambesons and (ftt or c_info["gambesons"]):
                     upgrades["gambesons"] = st.checkbox("Gambesons (+1 Pierce Armor)", key=f"gam_{side_idx}")
+                if has_careening and (ftt or c_info.get("careening", True)):
+                    upgrades["careening"] = st.checkbox("Careening (+1 Pierce Armor)", key=f"car_{side_idx}")
+                if has_dry_dock and (ftt or c_info.get("dry_dock", True)):
+                    upgrades["dry_dock"] = st.checkbox("Dry Dock (+15% Ship Speed)", key=f"dd_{side_idx}")
                 if has_siege_engineers and (ftt or c_info.get("siege_engineers", True)):
                     upgrades["siege_engineers"] = st.checkbox("Siege Engineers (+20% vs Build)", key=f"se_{side_idx}")
                 if has_cranequins and (ftt or civ == "Burgundians"):
                     upgrades["cranequins"] = st.checkbox("Cranequins (+1 Attack)", key=f"cran_{side_idx}")
 
-            # Specific unique techs dynamically checked against unit's boost_tech
             if has_kataparuto and (ftt or civ == "Japanese"):
                 upgrades["kataparuto"] = st.checkbox("Kataparuto (Fires & Packs 33% Faster)", key=f"kata_{side_idx}")
             if has_warwolf and (ftt or civ == "Britons"):
@@ -1038,17 +1106,23 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                 upgrades["fabric_shields"] = st.checkbox("Fabric Shields (+1/+2 Armor)", key=f"fs_{side_idx}")
             if has_bagains and (ftt or civ == "Bulgarians"):
                 upgrades["bagains"] = st.checkbox("Bagains (+5 Melee Armor)", key=f"bag_{side_idx}")
+            if has_carracks and (ftt or civ == "Portuguese"):
+                upgrades["carracks"] = st.checkbox("Carracks (+1/+1 Ship Armor)", key=f"carrak_{side_idx}")
+            if has_panokseon and (ftt or civ == "Koreans"):
+                upgrades["panokseon"] = st.checkbox("Panokseon (+15% Ship Speed)", key=f"panok_{side_idx}")
+            if has_artillery and (ftt or civ == "Turks"):
+                upgrades["artillery"] = st.checkbox("Artillery (+2 Cannon Galleon Range)", key=f"artill_{side_idx}")
 
         return base_unit, civ, upgrades, True
 
 def main():
     st.set_page_config(page_title="AoE2 1v1 Battle Calculator", page_icon="⚔️", layout="wide")
-    st.title("⚔️ Age of Empires 2 1v1 Battle Calculator (Patch 185872)")
-    st.markdown("Calculate 1v1 battles with civilization bonuses, full tech tree overrides, unique unit mechanics, and Patch 185872 DLCs.")
+    st.title("⚔️ Age of Empires 2 1v1 Battle Calculator (Patch 185872 & Naval Fleet)")
+    st.markdown("Calculate 1v1 battles with civilization bonuses, naval ships & upgrades, full tech tree overrides, and Patch 185872 DLCs.")
 
     col1, col2 = st.columns(2)
-    u1, civ1, up1, ok1 = render_unit_config(col1, 1, "Japanese", "Trebuchet")
-    u2, civ2, up2, ok2 = render_unit_config(col2, 2, "Britons", "Trebuchet")
+    u1, civ1, up1, ok1 = render_unit_config(col1, 1, "Burgundians", "Flemish Militia")
+    u2, civ2, up2, ok2 = render_unit_config(col2, 2, "Generic", "Pikeman")
 
     st.divider()
 

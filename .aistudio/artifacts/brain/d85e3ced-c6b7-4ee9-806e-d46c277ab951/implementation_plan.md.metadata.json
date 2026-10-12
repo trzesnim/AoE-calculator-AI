@@ -1,6 +1,6 @@
 {
-  "summary":  "Revised implementation plan for AoE2 1v1 Battle Calculator Streamlit app, incorporating dynamic wiki Boosts technology extraction, strict tech tree enforcement (including Winged Hussar replacements and Lithuanian/Pole exclusions), accurate Thumb Ring attack interval reduction, and unit-specific unique tech integration.",
-  "updatedAt":  "2026-10-12T11:22:05.047360533Z",
-  "requestFeedback":  true,
-  "userFacing":  true
+  "summary": "Implementation plan for adding the complete fleet of naval ships, naval upgrades (Careening, Dry Dock, Carracks, Panokseon, etc.), accurate Flemish Militia patch statistics (40 Feudal / 55 Castle / 60 Imperial), and dynamic live wiki parsing for naval and land units.",
+  "updatedAt": "2026-10-12T11:48:05.115230688Z",
+  "requestFeedback": true,
+  "userFacing": true
 }

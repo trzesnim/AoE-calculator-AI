@@ -1,62 +1,70 @@
-# AoE2 1v1 Battle Calculator - Streamlit Upgrade & Fix Plan
+# AoE2 1v1 Battle Calculator - Complete Naval & Patch Data Update
 
-This implementation plan refines `aoe_sl.py` to eliminate hardcoded assumptions by dynamically extracting unit upgrades directly from the Age of Empires Fandom MediaWiki `{{Boosts|Technologies}}` section, strictly enforcing AoE2 DE civilization tech trees (including regional lines and unit replacements like Winged Hussar for Lithuanians and Poles), and accurately modeling combat mechanics such as Thumb Ring attack rate increases.
+This implementation plan incorporates all naval ships (military combat vessels, unique ships, regional vessels, and civilian ships), naval upgrades (Careening, Dry Dock, Blacksmith ranged upgrades, Chemistry, and naval unique technologies), accurate Flemish Militia statistics per the latest balance patch, and enhanced live wiki stat extraction.
 
 ### User Review & Critical Decisions
 
 > [!IMPORTANT]
-> The following mechanics and architectural choices have been confirmed:
-> - **Dynamic Tech Extraction from Wiki**: Instead of guessing upgrade categories, parse the unit's wiki `{{Boosts|Technologies...}}` section to determine exactly which Blacksmith upgrades, university techs, and unique technologies (e.g. Kataparuto for Trebuchets, Rocketry for Scorpions/Chu Ko Nu, Recurve Bow for Cavalry Archers) apply to that specific unit.
-> - **Strict AoE2 DE Tech Tree Enforcement**: Prevent invalid unit selections with strict rules (e.g., Lithuanians and Poles get Winged Hussar but NOT standard Hussar; Turks get Pikeman but NOT Halberdier; Franks do NOT get Cavalry Archer or Arbalester; Persians get Savar instead of Paladin; Romans get Legionary instead of Two-Handed/Champion).
-> - **Thumb Ring Fire-Rate Implementation**: Thumb Ring reduces the unit's attack interval / Rate of Fire (Foot archers attack ~18% faster with 0.85x ROF multiplier; Cavalry Archers attack ~11% faster with 0.90x ROF multiplier), properly reflecting its combat value.
+> The following mechanics and parameters have been confirmed:
+> - **Comprehensive Ship Roster**: Add all naval vessels (Galley line, Fire Ship line, Demolition Ship line, Cannon Galleon line, Dromon, Longship, Turtle Ship, Caravel, Thirisadai, Fishing Ship, Trade Cog, and Transport Ship) as distinct selectable entries in the unit dropdown.
+> - **Dynamic Naval Boosts**: Automatically present applicable upgrades for each ship based on its wiki `{{Boosts|Technologies}}` section, including Careening (+1 pierce armor), Fletching / Bodkin / Bracer, Chemistry, and civ unique techs (Carracks, Panokseon, Artillery).
+> - **Accurate Flemish Militia Statistics**: Updated to current AoE2 DE patch stats:
+>   - Feudal Age (and Dark Age fallback): 40 HP, 6 attack, 0/1 armor
+>   - Castle Age: 55 HP, 8 attack, 1/1 armor
+>   - Imperial Age: 60 HP, 10 attack, 1/1 armor
+>   - Bonus vs Cavalry (+8) and Camel (+6).
+> - **Civilian & Unarmed Ships in 1v1**: Unarmed vessels (Fishing Ship, Trade Cog, Transport Ship) take hits without retaliating, correctly displaying time-to-kill statistics and awarding uncontested victory to the attacker.
 
 ---
 
-### 1. Overview & Dynamic Architecture
+### 1. Overview & Comprehensive Unit Expansion
 
-- **Dynamic Tech Ingestion**:
-  - The live wiki API fetcher extracts the `{{Boosts|Technologies}}` text block for each unit.
-  - The application inspects this text block to detect which blacksmith upgrade lines (Forging/Iron Casting/Blast Furnace, Fletching/Bodkin/Bracer, Scale/Chain/Plate Mail, Scale/Chain/Plate Barding, Padded/Leather/Ring Archer Armor), core technologies (Bloodlines, Thumb Ring, Parthian Tactics, Chemistry, Gambesons, Siege Engineers), and unique technologies (Kataparuto, Warwolf, Rocketry, Recurve Bow, Wootz Steel, Stirrups, Hauberk, Sipahi, El Dorado, Chatras, Comitatenses, Bogsveigar, etc.) affect the unit.
-  - Units like Trebuchets will ONLY be offered technologies present in their Boosts section (e.g. Kataparuto, Warwolf, Siege Engineers, Ironclad) and will never be offered irrelevant upgrades like Fletching.
-- **Tech Tree Availability Matrix**:
-  - Strict mapping for each civilization that accounts for regional unit lines, unique replacements, and bans.
-  - Alliance units (**Condottiero**, **Genitour**, **Imperial Skirmisher**, **Kipchak**) remain accessible to all civilizations.
+- **Land & Naval Combined Catalog (155+ Units)**:
+  - All existing land units, unique units, and regional units.
+  - **Standard Warships**: Galley, War Galley, Galleon.
+  - **Fire Warships**: Fire Galley, Fire Ship, Fast Fire Ship.
+  - **Demolition Warships**: Demolition Raft, Demolition Ship, Heavy Demolition Ship.
+  - **Gunpowder Warships**: Cannon Galleon, Elite Cannon Galleon, Dromon.
+  - **Unique & Regional Ships**:
+    - Longship, Elite Longship (Vikings, Danes, Saxons, Varangians).
+    - Turtle Ship, Elite Turtle Ship (Koreans).
+    - Caravel, Elite Caravel (Portuguese).
+    - Thirisadai (Dravidians).
+  - **Civilian & Transport Vessels**: Fishing Ship, Trade Cog, Transport Ship.
 
 ---
 
 ### 2. User Experience & Visual Design
 
-- **Left & Right Unit Configuration Columns**:
-  - **Civilization Selector**: 52 civilizations (including Generic, Danes, Saxons, Varangians, Mapuche, Muisca, Tupi, Romans, Armenians, Georgians).
-  - **Unit Selector**: Searchable selectbox. If a unit is unavailable for the selected civ (e.g. Hussar for Lithuanians, Cavalry Archer for Franks, Halberdier for Turks), an explicit warning appears and calculation stops.
-  - **Conditional Age Selector**: Displayed *only* if unit base stats scale with Age (Scout Cavalry, Eagle Scout, Flemish Militia, Serjeant).
-  - **Toggles**:
-    - `Fully Upgraded (FU)`: Applies all upgrades available to the civilization for that unit based on its Boosts section.
-    - `Full Tech Tree (FTT)`: Unlocks tech tree tiers beyond the civilization's usual limits (e.g. Plate Barding Armor for Malay) while preserving civilization-specific bonuses.
-  - **Contextual Upgrades (When FU is unchecked)**:
-    - Only renders upgrades actually listed in the unit's `boost_tech`.
-    - Selectboxes display clear names with bonus values: `Fletching (+1)`, `Bodkin Arrow (+2)`, `Bracer (+3)`, `Forging (+1)`, `Scale Mail Armor (+1/+1)`, etc.
-    - Thumb Ring accurately describes its combat effect: `Thumb Ring (Faster Fire Rate & Accuracy)`.
-- **Simulation Outcome**:
-  - Clear time-to-kill and hit count calculation.
-  - Winner announcement includes civilization name in parentheses (e.g. `Pikeman (Japanese) wins 1v1`).
-- **Dual Stat Cards**:
-  - **Generic Base Stats**: Unmodified baseline unit attributes.
-  - **Actual Combat Stats (Upgraded)**: Effective HP, effective attack, effective ROF, effective armor, and active special mechanics taken into account in the fight.
+- **Unit Configuration Columns**:
+  - **Unit Selector**: Alphabetical searchable dropdown featuring all land and naval units.
+  - **Ship Availability Validation**:
+    - Dromon strictly validated for Romans, Byzantines, Armenians, Goths, Huns.
+    - Cannon Galleon disallowed for civs that replace it with Dromon.
+    - Unique ships restricted to their respective civilizations.
+    - Standard ship upgrade restrictions (e.g., Aztecs lack Galleon and Fast Fire Ship).
+  - **Naval Upgrade Selectors**:
+    - Blacksmith Ranged Attack (`Fletching (+1)`, `Bodkin Arrow (+2)`, `Bracer (+3)`) offered only if present in ship's `boost_tech` (e.g. Galley line, Longship, Caravel).
+    - `Chemistry (+1 Attack)` for arrow/gunpowder ships.
+    - `Careening (+1 Pierce Armor)` offered for ships with the dock technology in `boost_tech`.
+    - Civ unique techs (Portuguese **Carracks**, Korean **Panokseon**, Turk **Artillery**).
+- **Civilian Ships in Battle**:
+  - Selecting a Trade Cog or Fishing Ship against a combat ship calculates exact hits and time-to-kill, awarding uncontested victory.
+  - Comparing two unarmed ships reports a peaceful stalemate without errors.
 
 ---
 
 ### 3. Key Product Decisions & Trade-Offs
 
-- **Decision 1: Wiki Boosts Parsing with Curated Resilient Fallback**
-  - *Chosen Approach*: Regex parses `{{Boosts|Technologies...}}` from live wiki data, while maintaining an offline curated boost dictionary for all 135+ units to protect against API downtime or network drops.
-  - *Why*: Eliminates incorrect upgrade pairings (e.g. Fletching on Trebuchets) while ensuring offline reliability.
-- **Decision 2: Accurate Thumb Ring Combat Simulation**
-  - *Chosen Approach*: Thumb Ring applies standard AoE2 fire rate reduction multipliers (0.85x for Foot Archers, 0.90x for Cavalry Archers), speeding up time-to-kill.
-  - *Why*: Properly reflects competitive AoE2 combat math where accuracy is already factored at close 1v1 range.
-- **Decision 3: Unit Availability Whitelist & Ban Validation**
-  - *Chosen Approach*: Explicitly map unique line replacements (e.g. Lithuanians and Poles only get Winged Hussar, not Hussar; Persians only get Savar, not Paladin; Romans only get Legionary, not Two-Handed/Champion).
-  - *Why*: Prevents misleading or impossible matchups while honoring alliance units.
+- **Decision 1: Direct Dropdown Tier Selection for Ships**
+  - *Chosen Approach*: Users choose the exact ship tier (e.g. "War Galley" vs "Galleon") directly from the dropdown.
+  - *Why*: Provides explicit control over matchup analysis across game stages without conflating unit identity with Age parameters.
+- **Decision 2: Live Wiki Ingestion with Curated Naval Fallback**
+  - *Chosen Approach*: Query Fandom wiki API for each ship's base stats and `{{Boosts|Technologies}}`, backed by a verified offline dictionary for all 18+ naval vessels.
+  - *Why*: Ensures zero crashes even when testing offline or under API rate limits.
+- **Decision 3: Naval Damage Formulas & Ship Armor Classes**
+  - *Chosen Approach*: Incorporates naval armor classes ("Ship", "Fishing Ship") and bonus damage (e.g. Fire Ships dealing bonus damage against Ships, Galley line dealing bonus damage against Ships/Buildings, Demolition ships dealing massive blast damage).
+  - *Why*: Reflects real AoE2 rock-paper-scissors naval combat dynamics.
 
 ---
 
@@ -68,33 +76,30 @@ This implementation plan refines `aoe_sl.py` to eliminate hardcoded assumptions 
 │  ┌───────────────────────────┐ ┌──────────────────────────┐ │
 │  │     Unit 1 Configuration   │ │   Unit 2 Configuration   │ │
 │  │  - Civ Dropdown (52 civs) │ │  - Civ Dropdown (52 civs)│ │
-│  │  - Unit Dropdown          │ │  - Unit Dropdown         │ │
-│  │  - [Conditional Age]      │ │  - [Conditional Age]     │ │
-│  │  - FU / FTT Checkboxes    │ │  - FU / FTT Checkboxes   │ │
-│  │  - Dynamic Upgrades from  │ │  - Dynamic Upgrades from │ │
-│  │    unit's Boosts section  │ │    unit's Boosts section │ │
+│  │  - Unit (Land & Ships)    │ │  - Unit (Land & Ships)   │ │
+│  │  - Contextual Upgrades    │ │  - Contextual Upgrades   │ │
+│  │    (Careening, Chemistry, │ │    (Careening, Chemistry,│ │
+│  │     Blacksmith, Unique)   │ │     Blacksmith, Unique)  │ │
 │  └─────────────┬─────────────┘ └────────────┬─────────────┘ │
 └────────────────┼────────────────────────────┼───────────────┘
                  │                            │
                  ▼                            ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                 Validation & Tech Tree Engine               │
-│  - Strict AoE2 DE Unit Availability (Hussar / Winged Hussar)│
-│  - Parse {{Boosts|Technologies}} for unit-specific techs    │
-│  - Filter available techs by Civilization Tech Tree & FTT   │
+│  - Validate Naval Unit Access (Dromon vs Cannon Galleon)    │
+│  - Parse {{Boosts|Technologies}} for Careening & Blacksmith │
+│  - Accurate Flemish Militia Stats (40 / 55 / 60 HP)         │
 └──────────────────────────────┬──────────────────────────────┘
                                │
                                ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    Combat Simulation Engine                 │
-│  - Damage per hit = max(1, Atk - Armor) + Bonus             │
-│  - Thumb Ring Fire-Rate Modifier (0.85x Foot / 0.90x Cav)   │
-│  - Obuch Shred, Coustillier Charge, Leitis Armor Ignore     │
-│  - Kataparuto / Warwolf / Rocketry / Unique Techs           │
-│  - Output Winner with (Civilization) in Results             │
+│  - Naval Rock-Paper-Scissors (Fire > Galley > Demo > Fire)  │
+│  - Unarmed Civilian Ships (Time-to-Kill Display)            │
+│  - Dual Stat Cards: Baseline vs Actual Upgraded Combat Stats│
 └─────────────────────────────────────────────────────────────┘
 ```
 
 - **File Delivery**:
-  - `/aoe_sl.py`: Complete plain Python script ready for GitHub and Streamlit.
-  - `/requirements.txt`: Streamlit and Requests dependencies.
+  - `/aoe_sl.py`: Complete Python script updated with full naval and patch mechanics.
+  - `/requirements.txt`: Python dependencies (`streamlit`, `requests`).
