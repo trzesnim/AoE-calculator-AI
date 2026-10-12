@@ -1,6 +1,12 @@
 import re
 import math
-import requests
+import urllib.request
+import urllib.parse
+import json
+try:
+    import requests
+except ImportError:
+    requests = None
 import streamlit as st
 
 # ==============================================================================
@@ -89,60 +95,59 @@ ELITE_UNITS = [
     "War Elephant", "War Wagon", "Woad Raider", "Xianbei Raider"
 ]
 
-# Civilization tech tree maximums and tech allowances
 CIV_DATA = {
-    "Generic": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Armenians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True},
-    "Aztecs": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Bengalis": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Berbers": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Bohemians": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True},
-    "Britons": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Bulgarians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True},
-    "Burgundians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Burmese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 1, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Byzantines": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Celts": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True},
-    "Chinese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Cumans": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": False, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True},
-    "Danes": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Dravidians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 1, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Ethiopians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Franks": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Georgians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Goths": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Gurjaras": {"max_m_atk": 2, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Hindustanis": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Huns": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": False, "siege_engineers": True},
-    "Incas": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Italians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Japanese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Khmer": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Koreans": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Lithuanians": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Magyars": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Malay": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 1, "max_i_arm": 2, "bloodlines": False, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Malians": {"max_m_atk": 2, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Mapuche": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Mayans": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Mongols": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True},
-    "Muisca": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True},
-    "Persians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Poles": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Portuguese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Romans": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": False, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Saracens": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Saxons": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Sicilians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True},
-    "Slavs": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True},
-    "Spanish": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Tatars": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Teutons": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Tupi": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 0, "max_i_arm": 2, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Turks": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Varangians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Vietnamese": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
-    "Vikings": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True},
+    "Generic": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": True},
+    "Armenians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True, "siphons": False},
+    "Aztecs": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Bengalis": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Berbers": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": True},
+    "Bohemians": {"max_m_atk": 2, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True, "siphons": False},
+    "Britons": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Bulgarians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 0, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True, "siphons": False},
+    "Burgundians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Burmese": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Byzantines": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": True},
+    "Celts": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True, "siphons": False},
+    "Chinese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Cumans": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": False, "siege_engineers": True, "siphons": False},
+    "Danes": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Dravidians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Ethiopians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Franks": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Georgians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True, "siphons": False},
+    "Goths": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Gurjaras": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Hindustanis": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Huns": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Incas": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Italians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": True},
+    "Japanese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Khmer": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Koreans": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Lithuanians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Magyars": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Malay": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 1, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Malians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Mapuche": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Mayans": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Mongols": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Muisca": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Persians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": True},
+    "Poles": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Portuguese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": True},
+    "Romans": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": True},
+    "Saracens": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": True},
+    "Saxons": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Sicilians": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Slavs": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Spanish": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": True},
+    "Tatars": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Teutons": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": False, "siege_engineers": True, "siphons": False},
+    "Tupi": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 0, "max_i_arm": 3, "bloodlines": False, "thumb_ring": True, "parthian": False, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Turks": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 3, "max_i_arm": 2, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": False, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": True},
+    "Varangians": {"max_m_atk": 3, "max_r_atk": 2, "max_a_arm": 2, "max_c_arm": 3, "max_i_arm": 3, "bloodlines": True, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": True},
+    "Vietnamese": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": True, "thumb_ring": True, "parthian": True, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False},
+    "Vikings": {"max_m_atk": 3, "max_r_atk": 3, "max_a_arm": 3, "max_c_arm": 2, "max_i_arm": 3, "bloodlines": False, "thumb_ring": False, "parthian": False, "chemistry": True, "gambesons": True, "careening": True, "dry_dock": True, "siege_engineers": True, "siphons": False}
 }
 
 EXCLUSIVE_UNIQUE_UNITS = {
@@ -323,7 +328,7 @@ def is_unit_available(civ: str, unit_name: str) -> tuple[bool, str]:
     if base_name in EXCLUSIVE_UNIQUE_UNITS:
         allowed = EXCLUSIVE_UNIQUE_UNITS[base_name]
         if civ not in allowed:
-            return False, f"{civ} does not get access to {unit_name}."
+            return False, f"{civ} does not get access to {unit_name} (exclusive to {', '.join(allowed)})."
 
     if civ in NO_STABLE_CIVS:
         cavalry_units = ["Knight", "Cavalier", "Paladin", "Scout Cavalry", "Light Cavalry", "Hussar", "Camel Rider", "Heavy Camel Rider", "Steppe Lancer", "Battle Elephant", "Cavalry Archer", "Heavy Cavalry Archer"]
@@ -332,19 +337,21 @@ def is_unit_available(civ: str, unit_name: str) -> tuple[bool, str]:
 
     if base_name in ["Eagle Scout", "Eagle Warrior", "Elite Eagle Warrior"]:
         if civ not in ["Aztecs", "Incas", "Mayans", "Mapuche", "Muisca", "Tupi"]:
-            return False, f"{civ} does not get access to {unit_name}."
+            return False, f"{civ} does not get access to {unit_name} (Mesoamerican/American civs only)."
 
     if base_name in UNIT_RESTRICTIONS:
         rule = UNIT_RESTRICTIONS[base_name]
         if "banned" in rule and civ in rule["banned"]:
-            return False, f"{civ} does not get access to {unit_name}."
+            if base_name == "Hussar" and civ in ["Lithuanians", "Poles"]:
+                return False, f"{civ} upgrades Light Cavalry to Winged Hussar, not regular Hussar."
+            return False, f"{civ} does not get access to {unit_name} in the standard tech tree."
         if "allowed" in rule and civ not in rule["allowed"]:
             return False, f"{civ} does not get access to {unit_name}."
 
     return True, ""
 
 class Unit:
-    def __init__(self, name, hp, p_attack=None, m_attack=None, rof=2.0, armor=0, pierce_armor=0, attack_bonus=None, armor_class=None, boost_tech=None, elite=False):
+    def __init__(self, name, hp, p_attack=None, m_attack=None, rof=2.0, armor=0, pierce_armor=0, attack_bonus=None, armor_class=None, boost_tech=None, elite=False, parsed_techs=None):
         self.name = name
         self.hp = int(hp) if hp is not None else 50
         self.p_attack = int(p_attack) if p_attack is not None else None
@@ -356,6 +363,7 @@ class Unit:
         self.armor_class = armor_class or []
         self.boost_tech = boost_tech or ""
         self.elite = elite
+        self.parsed_techs = parsed_techs or {}
 
     def __str__(self):
         bonus_str = ", ".join([f"+{v} vs {k}" for k, v in self.attack_bonus.items()]) if self.attack_bonus else "None"
@@ -364,36 +372,92 @@ class Unit:
         m_str = str(self.m_attack) if self.m_attack is not None else "None"
         return f"Name: {self.name}\nHP: {self.hp}\nMelee Attack: {m_str}\nPierce Attack: {p_str}\nRate of Fire (ROF): {self.rof:.2f}s\nMelee Armor: {self.armor}\nPierce Armor: {self.pierce_armor}\nAttack Bonuses: {bonus_str}\nArmor Classes: {class_str}"
 
-@st.cache_data
+def extract_template(wikitext: str, template_name: str) -> str:
+    target = "{{" + template_name.lower()
+    idx = wikitext.lower().find(target)
+    if idx == -1:
+        target_short = "{{" + template_name.split("|")[0].lower()
+        idx = wikitext.lower().find(target_short)
+        if idx == -1:
+            return ""
+    depth = 0
+    start = idx
+    i = idx
+    n = len(wikitext)
+    while i < n - 1:
+        pair = wikitext[i:i+2]
+        if pair == "{{":
+            depth += 1
+            i += 2
+        elif pair == "}}":
+            depth -= 1
+            i += 2
+            if depth == 0:
+                return wikitext[start:i]
+        else:
+            i += 1
+    return wikitext[start:]
+
+@st.cache_data(ttl=3600, show_spinner=False)
 def fetch_wiki_unit(unit_name: str):
-    title = unit_name.replace(" ", "_")
-    if title == "Villager":
-        title = "Villager_(Age_of_Empires_II)"
-    elif title == "Trebuchet":
-        title = "Trebuchet_(Age_of_Empires_II)"
-    elif title in ["Galley", "War_Galley", "Galleon", "Fire_Ship", "Demolition_Ship", "Cannon_Galleon"]:
-        title = f"{title}_(Age_of_Empires_II)"
-    url = f"https://ageofempires.fandom.com/api.php?action=query&prop=revisions&titles={title}&rvprop=content&formatversion=2&format=json"
-    try:
-        r = requests.get(url, timeout=5).json()
-        query = r.get("query", {})
-        pages = query.get("pages", [])
-        if not pages or pages[0].get("missing"):
-            return None, ""
-        content = pages[0]["revisions"][0]["content"]
-        if ("Disambig" in content or "disambig" in content) and "Bombard Cannon" not in content:
-            r2 = requests.get(f"https://ageofempires.fandom.com/api.php?action=query&prop=revisions&titles={title}_(Age_of_Empires_II)&rvprop=content&formatversion=2&format=json", timeout=5).json()
-            content = r2["query"]["pages"][0]["revisions"][0]["content"]
-        tech_match = re.search(r".+?Boosts\|Technologies(.+?)\{\{Boosts\|.+", content, flags=re.DOTALL)
-        boost_tech = tech_match.group(1) if tech_match else ""
-        content = re.sub(r"(<tabber>.+$)|(escription.+$)", "", content, flags=re.DOTALL)
-        return content, boost_tech
-    except Exception:
-        return None, ""
+    candidates = [unit_name, f"{unit_name} (Age of Empires II)"]
+    if unit_name in ["Fire Ship", "Cavalry Archer", "Villager", "Monk", "Galley", "Trade Cog", "Transport Ship", "Demolition Ship", "Cannon Galleon", "Longship"]:
+        candidates = [f"{unit_name} (Age of Empires II)", unit_name]
+
+    headers = {"User-Agent": "AoE2BattleCalculator/2.0"}
+    content = ""
+
+    for cand in candidates:
+        url = f"https://ageofempires.fandom.com/api.php?action=parse&page={urllib.parse.quote(cand)}&prop=wikitext&redirects=1&format=json"
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                if "parse" in data and "wikitext" in data["parse"]:
+                    wt = data["parse"]["wikitext"].get("*", "")
+                    if "disambig" in wt.lower() and "(age of empires ii)" not in cand.lower():
+                        continue
+                    content = wt
+                    break
+        except Exception:
+            continue
+
+    if not content:
+        return None, "", {}
+
+    boost_block = extract_template(content, "Boosts|Technologies")
+    if not boost_block:
+        boost_block = extract_template(content, "Boosts")
+
+    parsed_techs = {}
+    if boost_block:
+        for line in boost_block.splitlines():
+            icons = re.findall(r"\{\{2icons\|([^}|]+)", line)
+            if not icons:
+                continue
+            tech_name = icons[0].strip()
+            civs = re.findall(r"\[\[(?:[^|\]]+\|)?([A-Za-z]+)\]\]\s*only", line, re.I)
+            descs = re.findall(r"\(([^)]+)\)", line)
+            clean_descs = [d for d in descs if "only" not in d.lower()]
+            desc_str = ", ".join(clean_descs) if clean_descs else ""
+            desc_str = re.sub(r"\{\{[^}]+\}\}", "", desc_str).strip()
+            desc_str = re.sub(r"\[\[(?:[^|\]]+\|)?([^\]]+)\]\]", r"\1", desc_str).strip()
+
+            key = tech_name.lower()
+            if key not in parsed_techs:
+                parsed_techs[key] = {"name": tech_name, "civs": civs, "desc": desc_str}
+            else:
+                if civs and not parsed_techs[key]["civs"]:
+                    parsed_techs[key]["civs"] = civs
+                if desc_str and not parsed_techs[key]["desc"]:
+                    parsed_techs[key]["desc"] = desc_str
+
+    boost_tech_str = ", ".join([v["name"] for v in parsed_techs.values()])
+    return content, boost_tech_str, parsed_techs
 
 # Curated unit baseline fallbacks for Patch 185872 including complete naval fleet
 CURATED_UNITS = {
-    "Trebuchet": (150, 200, None, 10.0, 2, 8, {"Building": 250}, ["Siege weapon"], "Kataparuto, Warwolf, Ironclad, Furor Celticus, Siege Engineers"),
+    "Trebuchet": (150, 200, None, 10.0, 2, 8, {"Building": 250}, ["Siege weapon"], "Kataparuto, Warwolf, Ironclad, Furor Celticus, Siege Engineers, Counterweights"),
     "Knight": (100, None, 10, 1.8, 2, 2, {}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines, Hauberk, Stirrups, Farimba, Wootz Steel, Comitatenses"),
     "Cavalier": (120, None, 12, 1.8, 2, 2, {}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines, Hauberk, Stirrups, Farimba, Wootz Steel, Comitatenses"),
     "Paladin": (160, None, 14, 1.9, 2, 3, {}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines, Hauberk, Stirrups, Farimba"),
@@ -406,17 +470,20 @@ CURATED_UNITS = {
     "Archer": (30, 4, None, 2.0, 0, 0, {"Spearman": 3}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring, Bogsveigar"),
     "Crossbowman": (35, 5, None, 2.0, 0, 0, {"Spearman": 3}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring, Bogsveigar, Cranequins"),
     "Arbalester": (40, 6, None, 2.0, 0, 0, {"Spearman": 3}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring, Bogsveigar, Cranequins"),
-    "Skirmisher": (30, 2, None, 3.0, 0, 3, {"Archer": 3, "Spearman": 3}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring, Tower Shields, Hul'che Javelineers"),
-    "Elite Skirmisher": (35, 3, None, 3.0, 0, 4, {"Archer": 4, "Spearman": 3, "Cavalry archer": 2}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring, Tower Shields, Hul'che Javelineers"),
-    "Imperial Skirmisher": (35, 4, None, 3.0, 0, 4, {"Archer": 5, "Spearman": 3, "Cavalry archer": 3}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring, Tower Shields, Hul'che Javelineers"),
-    "Cavalry Archer": (50, 6, None, 2.0, 0, 0, {"Spearman": 2}, ["Archer", "Cavalry archer", "Cavalry"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Bloodlines, Thumb Ring, Parthian Tactics, Chemistry, Recurve Bow, Sipahi, Silk Armor"),
-    "Heavy Cavalry Archer": (60, 7, None, 2.0, 1, 0, {"Spearman": 4}, ["Archer", "Cavalry archer", "Cavalry"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Bloodlines, Thumb Ring, Parthian Tactics, Chemistry, Recurve Bow, Sipahi, Silk Armor"),
-    "Champion": (70, None, 13, 2.0, 1, 1, {"Eagle Warrior": 8, "Standard building": 4}, ["Infantry"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons, Garland Wars, Wootz Steel, Druzhina"),
-    "Jian Swordsman": (65, None, 12, 2.0, 1, 1, {"Eagle Warrior": 6}, ["Infantry", "Unshielded"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons"),
-    "Chu Ko Nu": (45, 8, None, 3.0, 0, 0, {"Spearman": 2}, ["Archer", "Unique unit"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Rocketry"),
-    "Kipchak": (40, 4, None, 2.2, 0, 0, {"Spearman": 2}, ["Archer", "Cavalry archer", "Cavalry", "Unique unit"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Bloodlines, Thumb Ring"),
-    "Coustillier": (115, None, 8, 1.9, 2, 2, {}, ["Cavalry", "Unique unit"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor"),
-    "Obuch": (80, None, 8, 1.9, 2, 2, {}, ["Infantry", "Unique unit"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor"),
+    "Skirmisher": (30, 2, None, 3.0, 0, 3, {"Archer": 3, "Spearman": 3}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring, Tower Shields"),
+    "Elite Skirmisher": (35, 3, None, 3.0, 0, 4, {"Archer": 4, "Spearman": 3, "Cavalry archer": 2}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring, Tower Shields"),
+    "Cavalry Archer": (50, 6, None, 2.0, 0, 0, {}, ["Cavalry", "Cavalry archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Bloodlines, Thumb Ring, Parthian Tactics, Chemistry, Recurve Bow, Sipahi, Silk Armor"),
+    "Heavy Cavalry Archer": (60, 7, None, 2.0, 1, 0, {}, ["Cavalry", "Cavalry archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Bloodlines, Thumb Ring, Parthian Tactics, Chemistry, Recurve Bow, Sipahi, Silk Armor"),
+    "Champion": (70, None, 13, 2.0, 1, 1, {"Eagle Warrior": 8}, ["Infantry"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons, Garland Wars, Wootz Steel, Bagains"),
+    "Two-Handed Swordsman": (60, None, 12, 2.0, 0, 1, {"Eagle Warrior": 6}, ["Infantry"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons, Garland Wars, Wootz Steel, Bagains"),
+    "Long Swordsman": (60, None, 9, 2.0, 1, 1, {"Eagle Warrior": 4}, ["Infantry"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons"),
+    "Man-at-Arms": (45, None, 6, 2.0, 0, 1, {"Eagle Warrior": 2}, ["Infantry"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons"),
+    "Militia": (40, None, 4, 2.0, 0, 1, {}, ["Infantry"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor"),
+    "Camel Rider": (100, None, 6, 2.0, 0, 0, {"Cavalry": 9, "Camel": 5}, ["Camel"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines, Farimba"),
+    "Heavy Camel Rider": (120, None, 7, 2.0, 0, 0, {"Cavalry": 18, "Camel": 9}, ["Camel"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines, Farimba"),
+    "Imperial Camel Rider": (140, None, 9, 2.0, 0, 0, {"Cavalry": 18, "Camel": 9}, ["Camel"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines"),
+    "Coustillier": (115, None, 11, 1.9, 2, 2, {}, ["Cavalry", "Unique unit"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines"),
+    "Obuch": (80, None, 8, 2.0, 2, 2, {}, ["Infantry", "Unique unit"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor"),
     "Leitis": (100, None, 12, 1.9, 1, 1, {}, ["Cavalry", "Unique unit"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines"),
     "Urumi Swordsman": (55, None, 8, 2.0, 1, 0, {}, ["Infantry", "Unique unit"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Wootz Steel"),
     "Varangian Guard": (75, None, 12, 1.9, 2, 2, {}, ["Infantry", "Unique unit"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor"),
@@ -430,13 +497,13 @@ CURATED_UNITS = {
     "Monk": (30, None, None, 5.5, 0, 0, {}, ["Monk"], ""),
     "Villager": (25, None, 3, 2.03, 0, 0, {}, [], "Supremacy, Loom, Wheelbarrow, Hand Cart"),
     "Trade Cart": (70, None, None, 2.0, 0, 0, {}, [], ""),
-    # Naval Ships
+    # Naval Ships & Upgrades
     "Galley": (120, 6, None, 3.0, 0, 6, {"Ship": 6, "Building": 6}, ["Ship"], "Fletching, Bodkin Arrow, Bracer, Chemistry, Careening, Dry Dock"),
     "War Galley": (135, 7, None, 3.0, 0, 6, {"Ship": 7, "Building": 7}, ["Ship"], "Fletching, Bodkin Arrow, Bracer, Chemistry, Careening, Dry Dock"),
     "Galleon": (165, 8, None, 3.0, 0, 8, {"Ship": 8, "Building": 8}, ["Ship"], "Fletching, Bodkin Arrow, Bracer, Chemistry, Careening, Dry Dock"),
-    "Fire Galley": (100, 1, None, 0.25, 0, 4, {"Ship": 3, "Building": 1}, ["Ship"], "Careening, Dry Dock"),
-    "Fire Ship": (120, 2, None, 0.25, 0, 6, {"Ship": 4, "Building": 2}, ["Ship"], "Careening, Dry Dock"),
-    "Fast Fire Ship": (140, 3, None, 0.25, 0, 8, {"Ship": 5, "Building": 3}, ["Ship"], "Careening, Dry Dock"),
+    "Fire Galley": (100, 1, None, 0.25, 0, 4, {"Ship": 3, "Building": 1}, ["Ship"], "Careening, Dry Dock, Siphons, Greek Fire"),
+    "Fire Ship": (120, 2, None, 0.25, 0, 6, {"Ship": 4, "Building": 2}, ["Ship"], "Careening, Dry Dock, Siphons, Greek Fire"),
+    "Fast Fire Ship": (140, 3, None, 0.25, 0, 8, {"Ship": 5, "Building": 3}, ["Ship"], "Careening, Dry Dock, Siphons, Greek Fire"),
     "Demolition Raft": (45, 90, None, 0.0, 0, 1, {"Ship": 110, "Building": 110}, ["Ship"], "Careening, Dry Dock"),
     "Demolition Ship": (60, 110, None, 0.0, 0, 2, {"Ship": 130, "Building": 130}, ["Ship"], "Careening, Dry Dock"),
     "Heavy Demolition Ship": (70, 140, None, 0.0, 0, 3, {"Ship": 160, "Building": 160}, ["Ship"], "Careening, Dry Dock"),
@@ -458,43 +525,45 @@ CURATED_UNITS = {
 def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
     norm = unit_name.lower()
 
-    # Flemish Militia stats updated to current AoE2 DE patch:
-    # Feudal (and Dark Age fallback): 40 HP, 6 attack, 0/1 armor
-    # Castle: 55 HP, 8 attack, 1/1 armor
-    # Imperial: 60 HP, 10 attack, 1/1 armor
+    content, boost_tech_str, parsed_techs = fetch_wiki_unit(unit_name)
+
+    # Flemish Militia: Feudal/Dark 40 HP, 5 atk, 1/1 arm; Castle 55 HP, 8 atk, 1/1 arm; Imperial 60 HP, 11 atk, 1/1 arm
+    # Note: Spearman class was removed in patch 153015. Gambesons does NOT affect Flemish Militia!
     if "flemish militia" in norm:
-        stats = {1: (40, 6, 0, 1), 2: (40, 6, 0, 1), 3: (55, 8, 1, 1), 4: (60, 10, 1, 1)}
-        hp, atk, arm, parm = stats.get(age, (60, 10, 1, 1))
-        return Unit("Flemish Militia", hp, m_attack=atk, rof=2.0, armor=arm, pierce_armor=parm, attack_bonus={"Cavalry": 8, "Camel": 6}, armor_class=["Infantry"], boost_tech="Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons", elite=is_elite)
+        stats = {1: (40, 5, 1, 1), 2: (40, 5, 1, 1), 3: (55, 8, 1, 1), 4: (60, 11, 1, 1)}
+        hp, atk, arm, parm = stats.get(age, (60, 11, 1, 1))
+        # Exclude gambesons from boost_tech if present
+        b_tech = "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Squires"
+        if boost_tech_str:
+            b_tech = boost_tech_str
+        return Unit("Flemish Militia", hp, m_attack=atk, rof=2.0, armor=arm, pierce_armor=parm, attack_bonus={"Cavalry": 8, "Camel": 6}, armor_class=["Infantry"], boost_tech=b_tech, elite=is_elite, parsed_techs=parsed_techs)
 
     if "serjeant" in norm:
         if age <= 2:
-            return Unit("Serjeant", 45, m_attack=5, rof=2.0, armor=1, pierce_armor=1, armor_class=["Infantry", "Unique unit"], boost_tech="Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons", elite=is_elite)
+            return Unit("Serjeant", 45, m_attack=5, rof=2.0, armor=1, pierce_armor=1, armor_class=["Infantry", "Unique unit"], boost_tech=boost_tech_str or "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons", elite=is_elite, parsed_techs=parsed_techs)
         elif age == 3:
-            return Unit("Serjeant", 60, m_attack=8, rof=2.0, armor=2, pierce_armor=2, armor_class=["Infantry", "Unique unit"], boost_tech="Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons", elite=is_elite)
+            return Unit("Serjeant", 60, m_attack=8, rof=2.0, armor=2, pierce_armor=2, armor_class=["Infantry", "Unique unit"], boost_tech=boost_tech_str or "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons", elite=is_elite, parsed_techs=parsed_techs)
         else:
-            return Unit("Elite Serjeant" if is_elite else "Serjeant", 75 if is_elite else 60, m_attack=11 if is_elite else 8, rof=2.0, armor=3 if is_elite else 2, pierce_armor=3 if is_elite else 2, armor_class=["Infantry", "Unique unit"], boost_tech="Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons", elite=is_elite)
+            return Unit("Elite Serjeant" if is_elite else "Serjeant", 75 if is_elite else 60, m_attack=11 if is_elite else 8, rof=2.0, armor=3 if is_elite else 2, pierce_armor=3 if is_elite else 2, armor_class=["Infantry", "Unique unit"], boost_tech=boost_tech_str or "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Gambesons", elite=is_elite, parsed_techs=parsed_techs)
 
     if "scout cavalry" in norm:
         atk = 3 if age <= 1 else (5 if age == 2 else 5)
-        return Unit("Scout Cavalry", 45, m_attack=atk, rof=2.04, armor=0, pierce_armor=2, attack_bonus={"Monk": 6}, armor_class=["Cavalry"], boost_tech="Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines", elite=is_elite)
+        return Unit("Scout Cavalry", 45, m_attack=atk, rof=2.04, armor=0, pierce_armor=2, attack_bonus={"Monk": 6}, armor_class=["Cavalry"], boost_tech=boost_tech_str or "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines", elite=is_elite, parsed_techs=parsed_techs)
 
     if "eagle scout" in norm:
         atk = 4 if age <= 2 else 7
-        return Unit("Eagle Scout", 50 if age <= 2 else 55, m_attack=atk, rof=2.0, armor=0, pierce_armor=2 if age <= 2 else 3, attack_bonus={"Cavalry": 3, "Camel": 1}, armor_class=["Infantry", "Eagle Warrior"], boost_tech="Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, El Dorado", elite=is_elite)
+        return Unit("Eagle Scout", 50 if age <= 2 else 55, m_attack=atk, rof=2.0, armor=0, pierce_armor=2 if age <= 2 else 3, attack_bonus={"Cavalry": 3, "Camel": 1}, armor_class=["Infantry", "Eagle Warrior"], boost_tech=boost_tech_str or "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, El Dorado", elite=is_elite, parsed_techs=parsed_techs)
 
-    content, boost_tech = fetch_wiki_unit(unit_name)
-
+    # Use live wiki boost text if available, fallback to curated
     curated_boost = CURATED_UNITS.get(unit_name, ("", "", "", "", "", "", "", "", ""))[8]
-    if curated_boost:
-        boost_tech = f"{boost_tech}, {curated_boost}"
+    effective_boost = boost_tech_str if boost_tech_str else curated_boost
 
     if not content and unit_name in CURATED_UNITS:
         c = CURATED_UNITS[unit_name]
-        return Unit(f"Elite {unit_name}" if (is_elite and not unit_name.startswith("Elite")) else unit_name, c[0], c[1], c[2], c[3], c[4], c[5], dict(c[6]), list(c[7]), boost_tech, is_elite)
+        return Unit(f"Elite {unit_name}" if (is_elite and not unit_name.startswith("Elite")) else unit_name, c[0], c[1], c[2], c[3], c[4], c[5], dict(c[6]), list(c[7]), effective_boost, is_elite, parsed_techs=parsed_techs)
 
     if not content:
-        return Unit(unit_name, 60, m_attack=10, rof=2.0, armor=1, pierce_armor=1, armor_class=["Infantry"], boost_tech="Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor", elite=is_elite)
+        return Unit(unit_name, 60, m_attack=10, rof=2.0, armor=1, pierce_armor=1, armor_class=["Infantry"], boost_tech=effective_boost, elite=is_elite, parsed_techs=parsed_techs)
 
     pattern = r"(Name|HP|PAttack|MAttack|ROF|Armor|PierceArmor|AttackBonus|Class) = (.+)\n"
     data = dict(re.findall(pattern, content))
@@ -548,7 +617,7 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
             if c not in armor_class:
                 armor_class.append(c)
 
-    return Unit(final_name, hp, p_atk, m_atk, rof, arm, parm, attack_bonus, armor_class, boost_tech, is_elite)
+    return Unit(final_name, hp, p_atk, m_atk, rof, arm, parm, attack_bonus, armor_class, effective_boost, is_elite, parsed_techs=parsed_techs)
 
 def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -> dict:
     hp = u.hp
@@ -568,7 +637,7 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
         hp += 40
     if up.get("chatras") and "battle elephant" in u.name.lower():
         hp += 100
-    if up.get("furor_celticus") and ("siege" in str(u.armor_class).lower() or "trebuchet" in u.name.lower()):
+    if (up.get("furor_celticus") or up.get("furor_celtica")) and ("siege" in str(u.armor_class).lower() or "trebuchet" in u.name.lower()):
         hp = int(hp * 1.4)
 
     rof = u.rof
@@ -618,6 +687,8 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
             p_atk += 1
         if up.get("cranequins") and any(c in u.name.lower() for c in ["crossbowman", "arbalester"]):
             p_atk += 1
+        if up.get("counterweights") and "trebuchet" in u.name.lower():
+            p_atk = int(p_atk * 1.15)
 
     armor_mult = 2 if civ == "Romans" else 1
     m_arm = u.armor + up.get("m_arm_val", 0) * armor_mult
@@ -659,6 +730,8 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
     bonus = 0
     if opponent and opponent.armor_class:
         bonus = sum([u.attack_bonus.get(cls, 0) for cls in opponent.armor_class])
+        if up.get("parthian") and any(c in u.armor_class for c in ["Cavalry archer"]) and any(c in opponent.armor_class for c in ["Spearman"]):
+            bonus += 4
         if civ == "Gurjaras" and any(c in u.armor_class for c in ["Cavalry"]):
             bonus = int(bonus * 1.4)
         if hasattr(opponent, 'civ') and getattr(opponent, 'civ', '') == "Sicilians":
@@ -690,6 +763,8 @@ def format_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -
         special.append(f"Charge Attack (+{10 if u.elite else 9} 1st hit)")
     if up.get("comitatenses"):
         special.append("Comitatenses Charge (+5 1st hit)")
+    if up.get("siphons"):
+        special.append("Siphons (Explosive Initial Burst Strike)")
     if "chu ko nu" in u.name.lower():
         special.append(f"Multishot ({5 if u.elite else 3} arrows)")
     if "kipchak" in u.name.lower():
@@ -728,7 +803,7 @@ def simulate_1v1(u1: Unit, u2: Unit, civ1: str, civ2: str, up1: dict, up2: dict)
     can_attack2 = (u2.p_attack is not None and u2.p_attack > 0) or (u2.m_attack is not None and u2.m_attack > 0)
 
     if not can_attack1 and not can_attack2:
-        return f"Neither {u1.name} nor {u2.name} has an attack.\n\nStalemate! Both units cannot damage each other."
+        return f"Neither {u1.name} ({civ1}) nor {u2.name} ({civ2}) has an attack.\n\nStalemate! Both units cannot damage each other."
 
     eff1 = compute_effective_stats(u1, civ1, up1, u2)
     eff2 = compute_effective_stats(u2, civ2, up2, u1)
@@ -756,6 +831,8 @@ def simulate_1v1(u1: Unit, u2: Unit, civ1: str, civ2: str, up1: dict, up2: dict)
                     dmg += (10 if u1.elite else 9)
                 elif up1.get("comitatenses"):
                     dmg += 5
+                elif up1.get("siphons"):
+                    dmg += 20
 
             if "chu ko nu" in u1.name.lower():
                 extra = 4 if u1.elite else 2
@@ -771,7 +848,7 @@ def simulate_1v1(u1: Unit, u2: Unit, civ1: str, civ2: str, up1: dict, up2: dict)
                 cur_u2_m_arm = max(0, cur_u2_m_arm - 1)
                 cur_u2_p_arm = max(0, cur_u2_p_arm - 1)
 
-        time1 = max(0.0, (hits1 - 1) * eff1["rof"])
+        time1 = (hits1 - 1) * eff1["rof"] if hits1 > 0 else 0.0
 
     hits2 = 0
     time2 = 0.0
@@ -796,6 +873,8 @@ def simulate_1v1(u1: Unit, u2: Unit, civ1: str, civ2: str, up1: dict, up2: dict)
                     dmg += (10 if u2.elite else 9)
                 elif up2.get("comitatenses"):
                     dmg += 5
+                elif up2.get("siphons"):
+                    dmg += 20
 
             if "chu ko nu" in u2.name.lower():
                 extra = 4 if u2.elite else 2
@@ -811,28 +890,42 @@ def simulate_1v1(u1: Unit, u2: Unit, civ1: str, civ2: str, up1: dict, up2: dict)
                 cur_u1_m_arm = max(0, cur_u1_m_arm - 1)
                 cur_u1_p_arm = max(0, cur_u1_p_arm - 1)
 
-        time2 = max(0.0, (hits2 - 1) * eff2["rof"])
+        time2 = (hits2 - 1) * eff2["rof"] if hits2 > 0 else 0.0
 
-    if not can_attack1 and can_attack2:
-        return f"{u1.name} ({civ1}) does not attack.\n\n{u2.name} ({civ2}) takes {hits2} hits and {time2:.2f} seconds to kill {u1.name} ({civ1})\n\n{u2.name} ({civ2}) wins 1v1 (uncontested)"
+    if not can_attack2:
+        return f"{u1.name} ({civ1}) defeats non-attacking {u2.name} ({civ2}) in {hits1} hits ({time1:.2f}s)!\n\nOutcome: {u1.name} ({civ1}) takes 0 damage and finishes with {eff1['hp']} HP remaining."
 
-    if can_attack1 and not can_attack2:
-        return f"{u2.name} ({civ2}) does not attack.\n\n{u1.name} ({civ1}) takes {hits1} hits and {time1:.2f} seconds to kill {u2.name} ({civ2})\n\n{u1.name} ({civ1}) wins 1v1 (uncontested)"
+    if not can_attack1:
+        return f"{u2.name} ({civ2}) defeats non-attacking {u1.name} ({civ1}) in {hits2} hits ({time2:.2f}s)!\n\nOutcome: {u2.name} ({civ2}) takes 0 damage and finishes with {eff2['hp']} HP remaining."
 
-    winner_str = ""
-    if time1 < time2:
-        winner_str = f"{u1.name} ({civ1}) wins 1v1"
-    elif time2 < time1:
-        winner_str = f"{u2.name} ({civ2}) wins 1v1"
+    # Compare time-to-kill
+    u1_label = f"{u1.name} ({civ1})"
+    u2_label = f"{u2.name} ({civ2})"
+
+    if math.isclose(time1, time2, abs_tol=0.01):
+        return f"A draw! Both {u1_label} and {u2_label} eliminate each other simultaneously in {hits1} vs {hits2} hits at {time1:.2f}s."
+    elif time1 < time2:
+        survived_hits = math.floor(time1 / eff2["rof"])
+        is_p2 = eff2["p_atk"] is not None
+        atk2 = eff2["p_atk"] if is_p2 else eff2["m_atk"]
+        target_arm1 = eff1["p_arm"] if is_p2 else eff1["m_arm"]
+        if "leitis" in u2.name.lower() or up2.get("wootz_steel"):
+            target_arm1 = 0
+        base_dmg2 = max(1, atk2 - target_arm1) + eff2["bonus"]
+        taken = survived_hits * base_dmg2
+        rem_hp = max(1, eff1["hp"] - taken)
+        return f"{u1_label} wins 1v1 against {u2_label}!\n\nOutcome:\n- {u1_label} kills in {hits1} hits ({time1:.2f}s).\n- {u2_label} dealt {taken} dmg over {survived_hits} hits.\n- Winner surviving HP: {rem_hp} / {eff1['hp']} HP remaining."
     else:
-        winner_str = f"Both units take the same time to kill each other (Tie)"
-
-    summary = (
-        f"{u1.name} ({civ1}) takes {hits1} hits and {time1:.2f} seconds to kill {u2.name} ({civ2})\n\n"
-        f"{u2.name} ({civ2}) takes {hits2} hits and {time2:.2f} seconds to kill {u1.name} ({civ1})\n\n"
-        f"{winner_str}"
-    )
-    return summary
+        survived_hits = math.floor(time2 / eff1["rof"])
+        is_p1 = eff1["p_atk"] is not None
+        atk1 = eff1["p_atk"] if is_p1 else eff1["m_atk"]
+        target_arm2 = eff2["p_arm"] if is_p1 else eff2["m_arm"]
+        if "leitis" in u1.name.lower() or up1.get("wootz_steel"):
+            target_arm2 = 0
+        base_dmg1 = max(1, atk1 - target_arm2) + eff1["bonus"]
+        taken = survived_hits * base_dmg1
+        rem_hp = max(1, eff2["hp"] - taken)
+        return f"{u2_label} wins 1v1 against {u1_label}!\n\nOutcome:\n- {u2_label} kills in {hits2} hits ({time2:.2f}s).\n- {u1_label} dealt {taken} dmg over {survived_hits} hits.\n- Winner surviving HP: {rem_hp} / {eff2['hp']} HP remaining."
 
 MELEE_ATK_NAMES = {0: "None (+0)", 1: "Forging (+1)", 2: "Iron Casting (+2)", 3: "Blast Furnace (+4)"}
 MELEE_ATK_VALUES = {0: 0, 1: 1, 2: 2, 3: 4}
@@ -840,8 +933,8 @@ MELEE_ATK_VALUES = {0: 0, 1: 1, 2: 2, 3: 4}
 RANGED_ATK_NAMES = {0: "None (+0)", 1: "Fletching (+1)", 2: "Bodkin Arrow (+2)", 3: "Bracer (+3)"}
 RANGED_ATK_VALUES = {0: 0, 1: 1, 2: 2, 3: 3}
 
-INF_ARM_NAMES = {0: "None (+0/+0)", 1: "Scale Mail Armor (+1/+1)", 2: "Chain Mail Armor (+2/+2)", 3: "Plate Mail Armor (+3/+3)"}
-INF_ARM_VALUES = {0: (0, 0), 1: (1, 1), 2: (2, 2), 3: (3, 3)}
+INF_ARM_NAMES = {0: "None (+0/+0)", 1: "Scale Mail Armor (+1/+1)", 2: "Chain Mail Armor (+2/+2)", 3: "Plate Mail Armor (+3/+4)"}
+INF_ARM_VALUES = {0: (0, 0), 1: (1, 1), 2: (2, 2), 3: (3, 4)}
 
 CAV_ARM_NAMES = {0: "None (+0/+0)", 1: "Scale Barding Armor (+1/+1)", 2: "Chain Barding Armor (+2/+2)", 3: "Plate Barding Armor (+3/+4)"}
 CAV_ARM_VALUES = {0: (0, 0), 1: (1, 1), 2: (2, 2), 3: (3, 4)}
@@ -857,10 +950,15 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         def_unit_idx = sorted(UNITS).index(default_unit) if default_unit in UNITS else 0
         unit_name = st.selectbox(f"Unit {side_idx}", sorted(UNITS), index=def_unit_idx, key=f"unit_name_{side_idx}")
 
+        ftt = st.checkbox("Full Tech Tree (FTT)", key=f"ftt_{side_idx}", help="Enable unhistorical units and upgrades for testing")
+
         is_avail, reason = is_unit_available(civ, unit_name)
         if not is_avail:
-            st.error(f"⚠️ {reason}")
-            return None, civ, None, False
+            if not ftt:
+                st.error(f"⚠️ **{unit_name}** is not available to **{civ}** in Age of Empires II: DE.\n\n*{reason}*\n\nPlease select an accessible unit, choose another civilization, or enable **Full Tech Tree (FTT)**.")
+                return None, civ, None, False
+            else:
+                st.info(f"ℹ️ {civ} does not normally train {unit_name}, but calculation is permitted under Full Tech Tree (FTT).")
 
         is_elite = False
         if unit_name in ELITE_UNITS:
@@ -878,7 +976,6 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
 
         c_info = CIV_DATA.get(civ, CIV_DATA["Generic"])
         fu = st.checkbox("Fully Upgraded (FU)", key=f"fu_{side_idx}")
-        ftt = st.checkbox("Full Tech Tree (FTT)", key=f"ftt_{side_idx}")
 
         upgrades = {}
         max_m_atk = 3 if ftt else c_info["max_m_atk"]
@@ -889,6 +986,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
 
         base_unit = parse_unit(unit_name, is_elite, age)
         boost = base_unit.boost_tech.lower()
+        parsed_techs = base_unit.parsed_techs or {}
 
         has_m_atk = any(k in boost for k in ["forging", "iron casting", "blast furnace"])
         has_r_atk = any(k in boost for k in ["fletching", "bodkin arrow", "bracer"])
@@ -905,11 +1003,12 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         has_dry_dock = "dry dock" in boost
         has_siege_engineers = "siege engineers" in boost
         has_cranequins = "cranequins" in boost
+        has_siphons = "siphons" in boost
 
         has_kataparuto = "kataparuto" in boost
         has_warwolf = "warwolf" in boost
         has_ironclad = "ironclad" in boost
-        has_furor = "furor celticus" in boost
+        has_furor = "furor celticus" in boost or "furor celtica" in boost
         has_recurve = "recurve bow" in boost
         has_rocketry = "rocketry" in boost
         has_garland = "garland wars" in boost
@@ -930,6 +1029,8 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         has_carracks = "carracks" in boost
         has_panokseon = "panokseon" in boost
         has_artillery = "artillery" in boost
+        has_greek_fire = "greek fire" in boost
+        has_counterweights = "counterweights" in boost
 
         if fu:
             upgrades["m_atk_val"] = MELEE_ATK_VALUES[max_m_atk] if has_m_atk else 0
@@ -954,6 +1055,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
             upgrades["dry_dock"] = has_dry_dock and (ftt or c_info.get("dry_dock", True))
             upgrades["siege_engineers"] = has_siege_engineers and (ftt or c_info.get("siege_engineers", True))
             upgrades["cranequins"] = has_cranequins and (ftt or civ == "Burgundians")
+            upgrades["siphons"] = has_siphons and (ftt or c_info.get("siphons", True))
             
             upgrades["kataparuto"] = has_kataparuto and (ftt or civ == "Japanese")
             upgrades["warwolf"] = has_warwolf and (ftt or civ == "Britons")
@@ -979,8 +1081,9 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
             upgrades["carracks"] = has_carracks and (ftt or civ == "Portuguese")
             upgrades["panokseon"] = has_panokseon and (ftt or civ == "Koreans")
             upgrades["artillery"] = has_artillery and (ftt or civ == "Turks")
+            upgrades["greek_fire"] = has_greek_fire and (ftt or civ == "Byzantines")
+            upgrades["counterweights"] = has_counterweights and (ftt or civ == "Saracens")
         else:
-            st.markdown("**Upgrades & Technologies:**")
             col_a, col_b = st.columns(2)
             with col_a:
                 if has_m_atk:
@@ -1050,7 +1153,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                 if has_thumb_ring and (ftt or c_info["thumb_ring"]):
                     upgrades["thumb_ring"] = st.checkbox("Thumb Ring (Faster Fire Rate)", key=f"tr_{side_idx}")
                 if has_parthian and (ftt or c_info["parthian"]):
-                    upgrades["parthian"] = st.checkbox("Parthian Tactics (+1/+2)", key=f"pt_{side_idx}")
+                    upgrades["parthian"] = st.checkbox("Parthian Tactics (+1/+2 Armor)", key=f"pt_{side_idx}")
                 if has_chemistry and (ftt or c_info["chemistry"]):
                     upgrades["chemistry"] = st.checkbox("Chemistry (+1 Attack)", key=f"chem_{side_idx}")
                 if has_gambesons and (ftt or c_info["gambesons"]):
@@ -1063,9 +1166,11 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                     upgrades["siege_engineers"] = st.checkbox("Siege Engineers (+20% vs Build)", key=f"se_{side_idx}")
                 if has_cranequins and (ftt or civ == "Burgundians"):
                     upgrades["cranequins"] = st.checkbox("Cranequins (+1 Attack)", key=f"cran_{side_idx}")
+                if has_siphons and (ftt or c_info.get("siphons", True)):
+                    upgrades["siphons"] = st.checkbox("Siphons (Explosive Initial Burst Strike)", key=f"siph_{side_idx}")
 
             if has_kataparuto and (ftt or civ == "Japanese"):
-                upgrades["kataparuto"] = st.checkbox("Kataparuto (Fires & Packs 33% Faster)", key=f"kata_{side_idx}")
+                upgrades["kataparuto"] = st.checkbox("Kataparuto (33% Faster Attack & 4x Pack Speed)", key=f"kata_{side_idx}")
             if has_warwolf and (ftt or civ == "Britons"):
                 upgrades["warwolf"] = st.checkbox("Warwolf (100% Blast Radius)", key=f"ww_{side_idx}")
             if has_ironclad and (ftt or civ == "Teutons"):
@@ -1112,13 +1217,17 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                 upgrades["panokseon"] = st.checkbox("Panokseon (+15% Ship Speed)", key=f"panok_{side_idx}")
             if has_artillery and (ftt or civ == "Turks"):
                 upgrades["artillery"] = st.checkbox("Artillery (+2 Cannon Galleon Range)", key=f"artill_{side_idx}")
+            if has_greek_fire and (ftt or civ == "Byzantines"):
+                upgrades["greek_fire"] = st.checkbox("Greek Fire (+1 Fire Ship Range)", key=f"gf_{side_idx}")
+            if has_counterweights and (ftt or civ == "Saracens"):
+                upgrades["counterweights"] = st.checkbox("Counterweights (+15% Trebuchet Attack)", key=f"cw_{side_idx}")
 
         return base_unit, civ, upgrades, True
 
 def main():
     st.set_page_config(page_title="AoE2 1v1 Battle Calculator", page_icon="⚔️", layout="wide")
     st.title("⚔️ Age of Empires 2 1v1 Battle Calculator (Patch 185872 & Naval Fleet)")
-    st.markdown("Calculate 1v1 battles with civilization bonuses, naval ships & upgrades, full tech tree overrides, and Patch 185872 DLCs.")
+    st.markdown("Calculate 1v1 battles with civilization bonuses, live Fandom wiki upgrade extraction, naval ships & upgrades (including Siphons), full tech tree overrides, and Patch 185872 DLCs.")
 
     col1, col2 = st.columns(2)
     u1, civ1, up1, ok1 = render_unit_config(col1, 1, "Burgundians", "Flemish Militia")

@@ -1,6 +1,6 @@
 {
-  "summary": "Implementation plan for adding the complete fleet of naval ships, naval upgrades (Careening, Dry Dock, Carracks, Panokseon, etc.), accurate Flemish Militia patch statistics (40 Feudal / 55 Castle / 60 Imperial), and dynamic live wiki parsing for naval and land units.",
-  "updatedAt": "2026-10-12T11:48:05.115230688Z",
+  "summary": "Revised implementation plan clarifying that Siphons is a general University technology (introduced in The Last Chieftains) available to multiple civilizations, and updating the Fandom API parser to dynamically check technology availability for every selected unit using cached live data.",
+  "updatedAt": "2026-10-12T12:43:21.190788881Z",
   "requestFeedback": true,
   "userFacing": true
 }

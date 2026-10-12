@@ -1,70 +1,59 @@
-# AoE2 1v1 Battle Calculator - Complete Naval & Patch Data Update
+# AoE2 1v1 Battle Calculator - Live Fandom Technology Extraction (Revised)
 
-This implementation plan incorporates all naval ships (military combat vessels, unique ships, regional vessels, and civilian ships), naval upgrades (Careening, Dry Dock, Blacksmith ranged upgrades, Chemistry, and naval unique technologies), accurate Flemish Militia statistics per the latest balance patch, and enhanced live wiki stat extraction.
+This revised implementation plan establishes a live, cached Fandom API extraction architecture where each selected unit dynamically derives its available upgrades, civilization constraints, and combat modifiers directly from the wiki's `{{Boosts|Technologies}}` block, correctly modeling technologies like **Siphons** (a general University technology available to multiple civilizations for the Fire Galley line) and civilizational unique techs.
 
 ### User Review & Critical Decisions
 
 > [!IMPORTANT]
-> The following mechanics and parameters have been confirmed:
-> - **Comprehensive Ship Roster**: Add all naval vessels (Galley line, Fire Ship line, Demolition Ship line, Cannon Galleon line, Dromon, Longship, Turtle Ship, Caravel, Thirisadai, Fishing Ship, Trade Cog, and Transport Ship) as distinct selectable entries in the unit dropdown.
-> - **Dynamic Naval Boosts**: Automatically present applicable upgrades for each ship based on its wiki `{{Boosts|Technologies}}` section, including Careening (+1 pierce armor), Fletching / Bodkin / Bracer, Chemistry, and civ unique techs (Carracks, Panokseon, Artillery).
-> - **Accurate Flemish Militia Statistics**: Updated to current AoE2 DE patch stats:
->   - Feudal Age (and Dark Age fallback): 40 HP, 6 attack, 0/1 armor
->   - Castle Age: 55 HP, 8 attack, 1/1 armor
->   - Imperial Age: 60 HP, 10 attack, 1/1 armor
->   - Bonus vs Cavalry (+8) and Camel (+6).
-> - **Civilian & Unarmed Ships in 1v1**: Unarmed vessels (Fishing Ship, Trade Cog, Transport Ship) take hits without retaliating, correctly displaying time-to-kill statistics and awarding uncontested victory to the attacker.
+> The following revisions have been incorporated:
+> - **Siphons as a General Naval Technology**: In modern AoE2 DE (*The Last Chieftains*), Siphons is a Castle Age University technology available across multiple civilizations (not just Byzantines) that grants Fire Galleys, Fire Ships, and Fast Fire Ships an explosive charge attack when engaging ships.
+> - **Live Unit Technology Parsing via Cached Fandom API**: When a unit is selected, the application queries and caches the Fandom page, parsing each entry in `{{Boosts|Technologies}}`:
+>   - The technology name from `{{2icons|<Tech Name>}}`.
+>   - The specific effect description from adjacent text (e.g. `(deals an explosive charge attack every 25 seconds)`, `(+1, [[Byzantines]] only)`).
+>   - Any civilization exclusivity tag (e.g. `[[Civ]] only`). If no civ is restricted, it is treated as a general technology and checked against the civ's tech tree.
+> - **Strict Dynamic Filtering**: No hardcoded upgrade lists; units only receive upgrade options actually present in their live wiki `{{Boosts|Technologies}}` block.
 
 ---
 
-### 1. Overview & Comprehensive Unit Expansion
+### 1. Overview & Dynamic Architecture
 
-- **Land & Naval Combined Catalog (155+ Units)**:
-  - All existing land units, unique units, and regional units.
-  - **Standard Warships**: Galley, War Galley, Galleon.
-  - **Fire Warships**: Fire Galley, Fire Ship, Fast Fire Ship.
-  - **Demolition Warships**: Demolition Raft, Demolition Ship, Heavy Demolition Ship.
-  - **Gunpowder Warships**: Cannon Galleon, Elite Cannon Galleon, Dromon.
-  - **Unique & Regional Ships**:
-    - Longship, Elite Longship (Vikings, Danes, Saxons, Varangians).
-    - Turtle Ship, Elite Turtle Ship (Koreans).
-    - Caravel, Elite Caravel (Portuguese).
-    - Thirisadai (Dravidians).
-  - **Civilian & Transport Vessels**: Fishing Ship, Trade Cog, Transport Ship.
+- **Live Data & Caching Pipeline**:
+  - `fetch_wiki_unit(unit_name)` queries `ageofempires.fandom.com/api.php` and caches the wiki text.
+  - An intelligent extractor parses:
+    1. Base combat statistics (HP, attack, ROF, melee/pierce armor, attack bonuses, armor classes).
+    2. The `{{Boosts|Technologies...}}` section, identifying all valid `{{2icons|<Tech Name>}}` tags and parenthetical effects.
+    3. Civilization restrictions indicated in the wiki text (e.g. `[[Britons]] only`, `[[Byzantines]] only`).
+- **Contextual Upgrade UI**:
+  - Only upgrades verified to boost the selected unit will be rendered in the UI.
+  - General upgrades (such as Siphons, Careening, Dry Dock, Forging, Blast Furnace, Bloodlines, Thumb Ring) are presented to any civilization that has access in their tech tree.
+  - Unique upgrades with civilization tags are shown only if the chosen civilization matches or if *Full Tech Tree (FTT)* is enabled.
 
 ---
 
 ### 2. User Experience & Visual Design
 
-- **Unit Configuration Columns**:
-  - **Unit Selector**: Alphabetical searchable dropdown featuring all land and naval units.
-  - **Ship Availability Validation**:
-    - Dromon strictly validated for Romans, Byzantines, Armenians, Goths, Huns.
-    - Cannon Galleon disallowed for civs that replace it with Dromon.
-    - Unique ships restricted to their respective civilizations.
-    - Standard ship upgrade restrictions (e.g., Aztecs lack Galleon and Fast Fire Ship).
-  - **Naval Upgrade Selectors**:
-    - Blacksmith Ranged Attack (`Fletching (+1)`, `Bodkin Arrow (+2)`, `Bracer (+3)`) offered only if present in ship's `boost_tech` (e.g. Galley line, Longship, Caravel).
-    - `Chemistry (+1 Attack)` for arrow/gunpowder ships.
-    - `Careening (+1 Pierce Armor)` offered for ships with the dock technology in `boost_tech`.
-    - Civ unique techs (Portuguese **Carracks**, Korean **Panokseon**, Turk **Artillery**).
-- **Civilian Ships in Battle**:
-  - Selecting a Trade Cog or Fishing Ship against a combat ship calculates exact hits and time-to-kill, awarding uncontested victory.
-  - Comparing two unarmed ships reports a peaceful stalemate without errors.
+- **Unit Configuration Flow**:
+  - **Unit Selection**: Changing a unit instantly loads its live wiki profile (cached for seamless re-render).
+  - **Dynamic Upgrade Selectors & Toggles**:
+    - Blacksmith Attack & Armor tiers (only shown if listed in unit's Boosts).
+    - University / Dock technologies (Siphons, Careening, Dry Dock, Chemistry, Siege Engineers).
+    - Unique Technologies (Greek Fire, Kataparuto, Warwolf, Rocketry, Recurve Bow, etc.) shown when applicable.
+  - **Accurate Labels**: Each toggle displays its name and parsed wiki effect string.
+- **Combat Simulation & Outcome**:
+  - Charge / Burst Attacks: Models first-hit burst damage for Coustillier, Urumi, Siphons (Fire Ships), and Roman Comitatenses.
+  - Fire Rate: Applies exact ROF reductions for Thumb Ring, Kataparuto, Japanese infantry, Saracen galleys, and Byzantine fire ships.
+  - Winner announcement includes civilization in parentheses (e.g. `Pikeman (Japanese) wins 1v1`).
 
 ---
 
 ### 3. Key Product Decisions & Trade-Offs
 
-- **Decision 1: Direct Dropdown Tier Selection for Ships**
-  - *Chosen Approach*: Users choose the exact ship tier (e.g. "War Galley" vs "Galleon") directly from the dropdown.
-  - *Why*: Provides explicit control over matchup analysis across game stages without conflating unit identity with Age parameters.
-- **Decision 2: Live Wiki Ingestion with Curated Naval Fallback**
-  - *Chosen Approach*: Query Fandom wiki API for each ship's base stats and `{{Boosts|Technologies}}`, backed by a verified offline dictionary for all 18+ naval vessels.
-  - *Why*: Ensures zero crashes even when testing offline or under API rate limits.
-- **Decision 3: Naval Damage Formulas & Ship Armor Classes**
-  - *Chosen Approach*: Incorporates naval armor classes ("Ship", "Fishing Ship") and bonus damage (e.g. Fire Ships dealing bonus damage against Ships, Galley line dealing bonus damage against Ships/Buildings, Demolition ships dealing massive blast damage).
-  - *Why*: Reflects real AoE2 rock-paper-scissors naval combat dynamics.
+- **Decision 1: Dynamic Tech Availability Resolution**
+  - *Chosen Approach*: Intersect the technologies parsed from `{{Boosts|Technologies}}` with the chosen civilization's tech capabilities. If a tech is general (like Siphons), check if the civilization has access (defaulting to accessible unless specifically banned).
+  - *Why*: Perfectly handles general technologies introduced in new DLCs without manual code edits.
+- **Decision 2: Live Wiki Parsing with Resilient In-Memory Fallback**
+  - *Chosen Approach*: Parse directly from live Fandom API responses, backed by offline fallback entries to prevent crashes in disconnected or latency-constrained environments.
+  - *Why*: Future-proofs the application for upcoming balance patches while maintaining zero downtime.
 
 ---
 
@@ -75,31 +64,31 @@ This implementation plan incorporates all naval ships (military combat vessels, 
 │                      Streamlit Frontend                     │
 │  ┌───────────────────────────┐ ┌──────────────────────────┐ │
 │  │     Unit 1 Configuration   │ │   Unit 2 Configuration   │ │
-│  │  - Civ Dropdown (52 civs) │ │  - Civ Dropdown (52 civs)│ │
-│  │  - Unit (Land & Ships)    │ │  - Unit (Land & Ships)   │ │
-│  │  - Contextual Upgrades    │ │  - Contextual Upgrades   │ │
-│  │    (Careening, Chemistry, │ │    (Careening, Chemistry,│ │
-│  │     Blacksmith, Unique)   │ │     Blacksmith, Unique)  │ │
+│  │  - Civ Dropdown           │ │  - Civ Dropdown          │ │
+│  │  - Unit Dropdown          │ │  - Unit Dropdown         │ │
+│  │  - Live Boosts Toggles    │ │  - Live Boosts Toggles   │ │
+│  │    (Siphons, Careening...)│ │    (Siphons, Careening...)│ │
 │  └─────────────┬─────────────┘ └────────────┬─────────────┘ │
 └────────────────┼────────────────────────────┼───────────────┘
                  │                            │
                  ▼                            ▼
 ┌─────────────────────────────────────────────────────────────┐
-│                 Validation & Tech Tree Engine               │
-│  - Validate Naval Unit Access (Dromon vs Cannon Galleon)    │
-│  - Parse {{Boosts|Technologies}} for Careening & Blacksmith │
-│  - Accurate Flemish Militia Stats (40 / 55 / 60 HP)         │
+│                 Live Fandom Extraction Engine               │
+│  - Query MediaWiki API (cached per unit)                    │
+│  - Extract {{Boosts|Technologies}} text block               │
+│  - Regex extract {{2icons|<Tech>}} + (parsed effect text)   │
+│  - Detect civ exclusivity [[Civ only]] vs general techs     │
 └──────────────────────────────┬──────────────────────────────┘
                                │
                                ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                    Combat Simulation Engine                 │
-│  - Naval Rock-Paper-Scissors (Fire > Galley > Demo > Fire)  │
-│  - Unarmed Civilian Ships (Time-to-Kill Display)            │
-│  - Dual Stat Cards: Baseline vs Actual Upgraded Combat Stats│
+│  - First-hit charge bursts (Coustillier, Siphons, Urumi)    │
+│  - Accurate Rate of Fire multipliers (Thumb Ring, Kataparuto│
+│  - Output Winner with (Civilization) in Results             │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 - **File Delivery**:
-  - `/aoe_sl.py`: Complete Python script updated with full naval and patch mechanics.
+  - `/aoe_sl.py`: Complete plain Python script ready for GitHub and Streamlit.
   - `/requirements.txt`: Python dependencies (`streamlit`, `requests`).
