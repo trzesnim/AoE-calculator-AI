@@ -37,7 +37,7 @@ def inspect_unit_extraction(unit_name: str):
     issues = []
     
     # 1. Fetch live wiki wikitext & parsed techs via aoe_sl
-    live_content, boost_tech_str, parsed_techs = aoe_sl.fetch_wiki_unit(unit_name)
+    live_content, boost_tech_str, parsed_techs, wiki_allowed = aoe_sl.fetch_wiki_unit(unit_name)
     has_live_wiki = bool(live_content)
     
     # 2. Parse unit through aoe_sl
@@ -134,7 +134,21 @@ def test_unit_and_upgrade_availability():
     else:
         print("  ✅ PASS: Recurve Bow upgrade is present in Cavalry Archer tech tree.")
 
-    # 4. Regional Mounted Crossbowman checks:
+    # 4. Aztec & American Civ Restrictions
+    # Aztecs and other Mesoamerican civs do not have access to Elephant Archers or Cavalry
+    ea_aztecs, ea_reason = aoe_sl.is_unit_available("Aztecs", "Elephant Archer")
+    if ea_aztecs:
+        mismatches.append("Aztecs should NOT have access to Elephant Archer!")
+    else:
+        print("  ✅ PASS: Aztecs cannot train Elephant Archer.")
+
+    ea_bengalis, _ = aoe_sl.is_unit_available("Bengalis", "Elephant Archer")
+    if not ea_bengalis:
+        mismatches.append("Bengalis should have access to Elephant Archer!")
+    else:
+        print("  ✅ PASS: Bengalis can train Elephant Archer.")
+
+    # 5. Regional Mounted Crossbowman checks:
     # Britons, Franks, Teutons have Mounted Crossbowman, NOT Cavalry Archer
     for euro_civ in ["Britons", "Franks", "Teutons"]:
         avail_mc, _ = aoe_sl.is_unit_available(euro_civ, "Mounted Crossbowman")
@@ -144,6 +158,29 @@ def test_unit_and_upgrade_availability():
         if avail_ca:
             mismatches.append(f"{euro_civ} should NOT have standard Cavalry Archer (replaced by Mounted Crossbowman).")
     print("  ✅ PASS: Regional unit replacements for European civs (Britons, Franks, Teutons) verified.")
+
+    # 6. Team and unique unit restrictions:
+    for civ_test, unit_test, should_pass in [
+        ("Burgundians", "Coustillier", True),
+        ("Franks", "Coustillier", False),
+        ("Tupi", "Blackwood Archer", True),
+        ("Britons", "Blackwood Archer", False),
+        ("Gurjaras", "Camel Scout", True),
+        ("Mongols", "Camel Scout", False),
+        ("Wu", "Jian Swordsman", True),
+        ("Chinese", "Jian Swordsman", False),
+        ("Wei", "Xianbei Raider", True),
+        ("Cumans", "Kipchak", True),
+        ("Tatars", "Kipchak", False),
+        ("Italians", "Condottiero", True),
+        ("Franks", "Condottiero", False),
+        ("Berbers", "Genitour", True),
+        ("Britons", "Genitour", False),
+    ]:
+        ok, res = aoe_sl.is_unit_available(civ_test, unit_test)
+        if ok != should_pass:
+            mismatches.append(f"{civ_test} with {unit_test} failed expectation (expected {should_pass}, got {ok}: {res})")
+    print("  ✅ PASS: Unique & regional unit restrictions across all civ combinations verified.")
 
     return mismatches
 

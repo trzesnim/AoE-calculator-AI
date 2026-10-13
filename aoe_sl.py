@@ -35,13 +35,16 @@ CIVILIZATIONS = [
 ]
 
 ALL_CIV_TEAM_UNITS = [
-    "Condottiero",
-    "Genitour",
-    "Elite Genitour",
-    "Imperial Skirmisher",
-    "Kipchak",
-    "Elite Kipchak"
+    # Units that any civilization can train ONLY if allied with their respective civ in a team game.
+    # In standard 1v1 battle calculation, they belong to their parent civilization.
 ]
+
+TEAM_BONUS_UNITS = {
+    "Condottiero": "Italians",
+    "Genitour": "Berbers",
+    "Elite Genitour": "Berbers",
+    "Imperial Skirmisher": "Vietnamese",
+}
 
 AGE_DEPENDENT_UNITS = [
     "scout cavalry",
@@ -215,6 +218,11 @@ EXCLUSIVE_UNIQUE_UNITS = {
     "War Elephant": ["Persians"],
     "War Wagon": ["Koreans"],
     "Warrior Priest": ["Armenians"],
+    "Blackwood Archer": ["Tupi"],
+    "Camel Scout": ["Gurjaras"],
+    "Jian Swordsman": ["Wu"],
+    "Kipchak": ["Cumans"],
+    "Xianbei Raider": ["Wei"],
     "Winged Hussar": ["Poles", "Lithuanians"],
     "Woad Raider": ["Celts"]
 }
@@ -282,8 +290,14 @@ UNIT_RESTRICTIONS = {
     "Elite Steppe Lancer": {
         "allowed": ["Mongols", "Tatars", "Cumans", "Chinese"]
     },
+    "Elephant Archer": {
+        "allowed": ["Bengalis", "Dravidians", "Gurjaras"]
+    },
+    "Elite Elephant Archer": {
+        "allowed": ["Bengalis", "Dravidians", "Gurjaras"]
+    },
     "Battle Elephant": {
-        "allowed": ["Bengalis", "Burmese", "Khmer", "Malay", "Vietnamese"]
+        "allowed": ["Bengalis", "Burmese", "Dravidians", "Khmer", "Malay", "Vietnamese"]
     },
     "Elite Battle Elephant": {
         "allowed": ["Bengalis", "Burmese", "Khmer", "Malay", "Vietnamese"]
@@ -336,10 +350,12 @@ def is_unit_available(civ: str, unit_name: str) -> tuple[bool, str]:
     if civ == "Generic":
         return True, ""
 
-    if unit_name in ALL_CIV_TEAM_UNITS:
-        return True, ""
-
     base_name = unit_name.replace("Elite ", "")
+
+    if base_name in TEAM_BONUS_UNITS:
+        parent_civ = TEAM_BONUS_UNITS[base_name]
+        if civ != parent_civ:
+            return False, f"{civ} can only train {unit_name} in team games with {parent_civ} ally."
 
     if base_name in EXCLUSIVE_UNIQUE_UNITS:
         allowed = EXCLUSIVE_UNIQUE_UNITS[base_name]
@@ -363,6 +379,14 @@ def is_unit_available(civ: str, unit_name: str) -> tuple[bool, str]:
             return False, f"{civ} does not get access to {unit_name} in the standard tech tree."
         if "allowed" in rule and civ not in rule["allowed"]:
             return False, f"{civ} does not get access to {unit_name}."
+
+    # Check live/cached Fandom wiki Infobox civilization restrictions
+    try:
+        _, _, _, wiki_civs = fetch_wiki_unit(base_name)
+        if wiki_civs and civ not in wiki_civs:
+            return False, f"{civ} does not get access to {unit_name} on Fandom (available only to: {', '.join(wiki_civs)})."
+    except Exception:
+        pass
 
     return True, ""
 
@@ -450,7 +474,7 @@ def fetch_wiki_unit(unit_name: str):
             continue
 
     if not content:
-        return None, "", {}
+        return None, "", {}, []
 
     boost_block = extract_template(content, "Boosts|Technologies")
     if not boost_block:
@@ -482,8 +506,24 @@ def fetch_wiki_unit(unit_name: str):
                 if desc_str and not parsed_techs[key]["desc"]:
                     parsed_techs[key]["desc"] = desc_str
 
+    # Extract allowed civilization restriction from Infobox AoE2 unit if present
+    wiki_allowed_civs = []
+    ibox_match = extract_template(content, "Infobox AoE2 unit") or extract_template(content, "Infobox")
+    if ibox_match:
+        civ_m = re.search(r"\|\s*Civilization\s*=\s*(.+)", ibox_match, re.I)
+        if civ_m:
+            c_val = civ_m.group(1).strip()
+            # Only parse if not generic 'all' or 'see table'
+            if not any(k in c_val.lower() for k in ["see table", "all", "various"]):
+                parsed_c = re.findall(r"\{\{2icons\|([^}|]+)", c_val)
+                if not parsed_c:
+                    parsed_c = re.findall(r"\[\[(?:[^|\]]+\|)?([A-Za-z]+)\]\]", c_val)
+                clean_c = [c.replace("Maya", "Mayans").strip() for c in parsed_c if c.strip() and "allies" not in c.lower()]
+                if clean_c:
+                    wiki_allowed_civs = clean_c
+
     boost_tech_str = ", ".join([v["name"] for v in parsed_techs.values()])
-    return content, boost_tech_str, parsed_techs
+    return content, boost_tech_str, parsed_techs, wiki_allowed_civs
 
 # Curated unit baseline fallbacks for Patch 185872 including complete naval fleet
 CURATED_UNITS = {
@@ -561,7 +601,7 @@ CURATED_UNITS = {
 def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
     norm = unit_name.lower()
 
-    content, boost_tech_str, parsed_techs = fetch_wiki_unit(unit_name)
+    content, boost_tech_str, parsed_techs, wiki_allowed_civs = fetch_wiki_unit(unit_name)
 
     # Flemish Militia: Feudal/Dark 40 HP, 5 atk, 1/1 arm; Castle 55 HP, 8 atk, 1/1 arm; Imperial 60 HP, 11 atk, 1/1 arm
     # Note: Spearman class was removed in patch 153015. Gambesons does NOT affect Flemish Militia!
