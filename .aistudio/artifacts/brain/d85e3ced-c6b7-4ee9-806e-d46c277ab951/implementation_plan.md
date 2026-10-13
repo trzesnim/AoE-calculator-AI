@@ -1,94 +1,79 @@
-# AoE2 1v1 Battle Calculator - Live Fandom Technology Extraction (Revised)
+# AoE2 Battle Calculator: Comprehensive Verification & Test Suite
 
-This revised implementation plan establishes a live, cached Fandom API extraction architecture where each selected unit dynamically derives its available upgrades, civilization constraints, and combat modifiers directly from the wiki's `{{Boosts|Technologies}}` block, correctly modeling technologies like **Siphons** (a general University technology available to multiple civilizations for the Fire Galley line) and civilizational unique techs.
+Deliver two robust, standalone Python test programs that thoroughly test and validate data extraction against Fandom Wiki and evaluate calculation logic for all combat edge cases in `aoe_sl.py`, ensuring complete correctness and readiness for Git push and Streamlit app deployment.
 
 ### User Review & Critical Decisions
 
 > [!IMPORTANT]
-> The following revisions have been incorporated:
-> - **Siphons as a General Naval Technology**: In modern AoE2 DE (*The Last Chieftains*), Siphons is a Castle Age University technology available across multiple civilizations (not just Byzantines) that grants Fire Galleys, Fire Ships, and Fast Fire Ships an explosive charge attack when engaging ships.
-> - **Live Unit Technology Parsing via Cached Fandom API**: When a unit is selected, the application queries and caches the Fandom page, parsing each entry in `{{Boosts|Technologies}}`:
->   - The technology name from `{{2icons|<Tech Name>}}`.
->   - The specific effect description from adjacent text (e.g. `(deals an explosive charge attack every 25 seconds)`, `(+1, [[Byzantines]] only)`).
->   - Any civilization exclusivity tag (e.g. `[[Civ]] only`). If no civ is restricted, it is treated as a general technology and checked against the civ's tech tree.
-> - **Strict Dynamic Filtering**: No hardcoded upgrade lists; units only receive upgrade options actually present in their live wiki `{{Boosts|Technologies}}` block.
+> - **Fandom Extraction Strategy**: Test all 144 units with fallback comparison (verifying live Fandom wikitext where available, validating curated baseline integrity, and ensuring graceful handling of HTTP 429 rate limits).
+> - **Execution Target**: Self-contained Python scripts executed directly in the environment to verify and guarantee that `aoe_sl.py` is 100% bug-free and production ready.
 
 ---
 
-### 1. Overview & Dynamic Architecture
+### 1. Overview & Core Concept
 
-- **Live Data & Caching Pipeline**:
-  - `fetch_wiki_unit(unit_name)` queries `ageofempires.fandom.com/api.php` and caches the wiki text.
-  - An intelligent extractor parses:
-    1. Base combat statistics (HP, attack, ROF, melee/pierce armor, attack bonuses, armor classes).
-    2. The `{{Boosts|Technologies...}}` section, identifying all valid `{{2icons|<Tech Name>}}` tags and parenthetical effects.
-    3. Civilization restrictions indicated in the wiki text (e.g. `[[Britons]] only`, `[[Byzantines]] only`).
-- **Contextual Upgrade UI**:
-  - Only upgrades verified to boost the selected unit will be rendered in the UI.
-  - General upgrades (such as Siphons, Careening, Dry Dock, Forging, Blast Furnace, Bloodlines, Thumb Ring) are presented to any civilization that has access in their tech tree.
-  - Unique upgrades with civilization tags are shown only if the chosen civilization matches or if *Full Tech Tree (FTT)* is enabled.
+- **What It Delivers**:
+  1. `test_data_extraction_suite.py`: Tests unit data extraction across all 144 units in `aoe_sl.py`. Extracts Infobox AoE2 unit templates and Boosts from Fandom API, validates HP, attacks, armor values, rate of fire, armor classes, and tech trees, comparing against the curated fallbacks.
+  2. `test_combat_calculation_suite.py`: Systematically asserts calculation logic across all edge cases (Knight vs Pikeman chronological tick, suicide units exclusion like Petard and Demolition Ships, Obuch armor shredding, Leitis armor bypass, Coustillier charge attack, Chu Ko Nu secondary arrows, Dry Dock naval buffs, non-attacking civilian units, and mirror match draws).
+  3. Validates and refines `aoe_sl.py` so that it passes both test suites with zero failures and is fully ready for Git push and Streamlit deployment.
 
 ---
 
-### 2. User Experience & Visual Design
-
-- **Unit Configuration Flow**:
-  - **Unit Selection**: Changing a unit instantly loads its live wiki profile (cached for seamless re-render).
-  - **Dynamic Upgrade Selectors & Toggles**:
-    - Blacksmith Attack & Armor tiers (only shown if listed in unit's Boosts).
-    - University / Dock technologies (Siphons, Careening, Dry Dock, Chemistry, Siege Engineers).
-    - Unique Technologies (Greek Fire, Kataparuto, Warwolf, Rocketry, Recurve Bow, etc.) shown when applicable.
-  - **Accurate Labels**: Each toggle displays its name and parsed wiki effect string.
-- **Combat Simulation & Outcome**:
-  - Charge / Burst Attacks: Models first-hit burst damage for Coustillier, Urumi, Siphons (Fire Ships), and Roman Comitatenses.
-  - Fire Rate: Applies exact ROF reductions for Thumb Ring, Kataparuto, Japanese infantry, Saracen galleys, and Byzantine fire ships.
-  - Winner announcement includes civilization in parentheses (e.g. `Pikeman (Japanese) wins 1v1`).
-
----
-
-### 3. Key Product Decisions & Trade-Offs
-
-- **Decision 1: Dynamic Tech Availability Resolution**
-  - *Chosen Approach*: Intersect the technologies parsed from `{{Boosts|Technologies}}` with the chosen civilization's tech capabilities. If a tech is general (like Siphons), check if the civilization has access (defaulting to accessible unless specifically banned).
-  - *Why*: Perfectly handles general technologies introduced in new DLCs without manual code edits.
-- **Decision 2: Live Wiki Parsing with Resilient In-Memory Fallback**
-  - *Chosen Approach*: Parse directly from live Fandom API responses, backed by offline fallback entries to prevent crashes in disconnected or latency-constrained environments.
-  - *Why*: Future-proofs the application for upcoming balance patches while maintaining zero downtime.
-
----
-
-### 4. Technical Architecture & Data Strategy
+### 2. Technical Architecture & Test Strategy
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                      Streamlit Frontend                     │
-│  ┌───────────────────────────┐ ┌──────────────────────────┐ │
-│  │     Unit 1 Configuration   │ │   Unit 2 Configuration   │ │
-│  │  - Civ Dropdown           │ │  - Civ Dropdown          │ │
-│  │  - Unit Dropdown          │ │  - Unit Dropdown         │ │
-│  │  - Live Boosts Toggles    │ │  - Live Boosts Toggles   │ │
-│  │    (Siphons, Careening...)│ │    (Siphons, Careening...)│ │
-│  └─────────────┬─────────────┘ └────────────┬─────────────┘ │
-└────────────────┼────────────────────────────┼───────────────┘
-                 │                            │
-                 ▼                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│                 Live Fandom Extraction Engine               │
-│  - Query MediaWiki API (cached per unit)                    │
-│  - Extract {{Boosts|Technologies}} text block               │
-│  - Regex extract {{2icons|<Tech>}} + (parsed effect text)   │
-│  - Detect civ exclusivity [[Civ only]] vs general techs     │
-└──────────────────────────────┬──────────────────────────────┘
-                               │
-                               ▼
-┌─────────────────────────────────────────────────────────────┐
-│                    Combat Simulation Engine                 │
-│  - First-hit charge bursts (Coustillier, Siphons, Urumi)    │
-│  - Accurate Rate of Fire multipliers (Thumb Ring, Kataparuto│
-│  - Output Winner with (Civilization) in Results             │
-└─────────────────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────────────────────┐
+│                          Fandom Wiki API                               │
+│       https://ageofempires.fandom.com/api.php?action=parse...          │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ Live Wikitext
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                    test_data_extraction_suite.py                       │
+│  - Queries all 144 units in aoe_sl.UNITS                               │
+│  - Verifies Infobox AoE2 unit parsing (HP, ROF, Armor, Attacks)        │
+│  - Compares with CURATED_UNITS baseline fallbacks                      │
+│  - Verifies Patch 185872 & The Last Chieftains (Hulk line, Carrack)    │
+│  - Verifies Suicide unit tagging (Petard, Demo Ships, Flaming Camel)   │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │ Validated Unit Objects
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                              aoe_sl.py                                 │
+│  - parse_unit(unit_name, is_elite, age)                                │
+│  - compute_effective_stats(unit, civ, upgrades, opponent)              │
+│  - simulate_1v1(unit1, unit2, civ1, civ2, up1, up2)                    │
+│  - Streamlit UI app layout & interactive options                       │
+└───────────────────────────────────┬────────────────────────────────────┘
+                                    │
+                                    ▼
+┌────────────────────────────────────────────────────────────────────────┐
+│                   test_combat_calculation_suite.py                    │
+│  - Edge Case 1: Chronological tick (Knight vs Pikeman, no 0s draw)     │
+│  - Edge Case 2: Suicide unit exclusion (Petard, Demo Ship, Flaming)   │
+│  - Edge Case 3: Obuch progressive armor reduction (-1/-1 per hit)     │
+│  - Edge Case 4: Leitis / Wootz Steel complete armor bypass             │
+│  - Edge Case 5: Coustillier / Urumi burst charge attacks on hit 1      │
+│  - Edge Case 6: Chu Ko Nu & Kipchak secondary arrow volley             │
+│  - Edge Case 7: Naval fleet & Dry Dock (+1 Pierce Armor to ships)      │
+│  - Edge Case 8: Non-attacking units & mirror match simultaneous draw   │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
-- **File Delivery**:
-  - `/aoe_sl.py`: Complete plain Python script ready for GitHub and Streamlit.
-  - `/requirements.txt`: Python dependencies (`streamlit`, `requests`).
+---
+
+### 3. Implementation Steps
+
+1. **Create `test_data_extraction_suite.py`**:
+   - Tests all 144 units in `aoe_sl.UNITS`.
+   - Compares live API wikitext vs curated baseline fallbacks.
+   - Reports exact discrepancies and confirms validity of all stats.
+
+2. **Create `test_combat_calculation_suite.py`**:
+   - Executes exhaustive edge case matrix against `simulate_1v1` and `compute_effective_stats`.
+   - Asserts mathematical correctness across times, hits, remaining HP, and bonus damage calculations.
+
+3. **Execute & Verify against `aoe_sl.py`**:
+   - Run both test programs.
+   - Ensure clean compilation with `python3 -m py_compile`, `compile_applet`, and `lint_applet`.
+   - Confirm complete readiness for Git push and Streamlit app.

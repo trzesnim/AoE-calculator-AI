@@ -50,34 +50,38 @@ AGE_DEPENDENT_UNITS = [
     "serjeant"
 ]
 
+SUICIDE_UNITS = [
+    "Petard", "Demolition Raft", "Demolition Ship", "Heavy Demolition Ship", "Flaming Camel", "Saboteur"
+]
+
 UNITS = [
     "Arambai", "Arbalester", "Archer", "Armored Elephant", "Ballista Elephant",
     "Battering Ram", "Battle Elephant", "Berserk", "Blackwood Archer", "Bolas Rider",
     "Bombard Cannon", "Boyar", "Camel Archer", "Camel Rider", "Camel Scout",
-    "Cannon Galleon", "Capped Ram", "Caravel", "Cataphract", "Cavalier",
+    "Cannon Galleon", "Capped Ram", "Caravel", "Carrack", "Cataphract", "Cavalier",
     "Cavalry Archer", "Centurion", "Chakram Thrower", "Champion", "Chu Ko Nu",
     "Composite Bowman", "Condottiero", "Conquistador", "Coustillier", "Crossbowman",
     "Demolition Raft", "Demolition Ship", "Dromon", "Eagle Scout", "Eagle Warrior",
     "Elephant Archer", "Elite Battle Elephant", "Elite Cannon Galleon", "Elite Caravel",
     "Elite Eagle Warrior", "Elite Elephant Archer", "Elite Longship", "Elite Skirmisher",
     "Elite Steppe Lancer", "Elite Turtle Ship", "Fast Fire Ship", "Fire Galley",
-    "Fire Ship", "Fishing Ship", "Flemish Militia", "Galley", "Galleon", "Gbeto",
+    "Fire Ship", "Fishing Ship", "Flaming Camel", "Flemish Militia", "Galley", "Galleon", "Gbeto",
     "Genitour", "Genoese Crossbowman", "Ghulam", "Guecha Warrior", "Halberdier",
     "Hand Cannoneer", "Hearth Troop", "Heavy Camel Rider", "Heavy Cavalry Archer",
-    "Heavy Demolition Ship", "Heavy Scorpion", "Houfnice", "Huskarl", "Hussar",
+    "Heavy Demolition Ship", "Heavy Scorpion", "Houfnice", "Hulk", "Huskarl", "Hussar",
     "Hussite Wagon", "Ibirapema Warrior", "Imperial Camel Rider", "Imperial Skirmisher",
     "Janissary", "Jian Swordsman", "Jomsviking", "Kamayuk", "Karambit Warrior",
     "Keshik", "Kipchak", "Knight", "Kona", "Konnik", "Legionary", "Leitis",
     "Light Cavalry", "Long Swordsman", "Longbowman", "Longship", "Magyar Huszar",
     "Mameluke", "Man-at-Arms", "Mangonel", "Mangudai", "Militia", "Missionary",
     "Monaspa", "Monk", "Mounted Crossbowman", "Obuch", "Onager", "Organ Gun",
-    "Paladin", "Pikeman", "Plumed Archer", "Ratha", "Rattan Archer", "Samurai",
+    "Paladin", "Petard", "Pikeman", "Plumed Archer", "Ratha", "Rattan Archer", "Samurai",
     "Savar", "Scorpion", "Scout Cavalry", "Serjeant", "Shotel Warrior",
     "Shrivamsha Rider", "Siege Elephant", "Siege Onager", "Siege Ram", "Siege Tower",
     "Skirmisher", "Slinger", "Spearman", "Steppe Lancer", "Teutonic Knight",
     "Thirisadai", "Throwing Axeman", "Trade Cart", "Trade Cog", "Transport Ship",
     "Trebuchet", "Turtle Ship", "Two-Handed Swordsman", "Urumi Swordsman",
-    "Varangian Guard", "Villager", "War Elephant", "War Galley", "War Wagon",
+    "Varangian Guard", "Villager", "War Elephant", "War Galley", "War Hulk", "War Wagon",
     "Warrior Priest", "Winged Hussar", "Woad Raider", "Xianbei Raider"
 ]
 
@@ -313,6 +317,12 @@ UNIT_RESTRICTIONS = {
     },
     "Heavy Demolition Ship": {
         "banned": ["Aztecs", "Burmese", "Byzantines", "Incas", "Italians", "Japanese", "Khmer", "Koreans", "Mayans", "Persians", "Romans", "Spanish"]
+    },
+    "Carrack": {
+        "banned": ["Britons", "Danes", "Georgians", "Huns", "Mongols", "Romans", "Tupi"]
+    },
+    "Flaming Camel": {
+        "allowed": ["Tatars"]
     }
 }
 
@@ -398,11 +408,20 @@ def extract_template(wikitext: str, template_name: str) -> str:
             i += 1
     return wikitext[start:]
 
+WIKI_TITLE_OVERRIDES = {
+    "Carrack": "Carrack (unit)",
+    "Springald Ship": "Springald ship",
+}
+
 @st.cache_data(ttl=3600, show_spinner=False)
 def fetch_wiki_unit(unit_name: str):
-    candidates = [unit_name, f"{unit_name} (Age of Empires II)"]
-    if unit_name in ["Fire Ship", "Cavalry Archer", "Villager", "Monk", "Galley", "Trade Cog", "Transport Ship", "Demolition Ship", "Cannon Galleon", "Longship"]:
-        candidates = [f"{unit_name} (Age of Empires II)", unit_name]
+    clean = unit_name.replace("Elite ", "").strip()
+    override = WIKI_TITLE_OVERRIDES.get(clean, clean)
+    candidates = [
+        f"{override} (Age of Empires II)",
+        override,
+        f"{override} (unit)"
+    ]
 
     headers = {"User-Agent": "AoE2BattleCalculator/2.0"}
     content = ""
@@ -415,10 +434,12 @@ def fetch_wiki_unit(unit_name: str):
                 data = json.loads(resp.read().decode("utf-8"))
                 if "parse" in data and "wikitext" in data["parse"]:
                     wt = data["parse"]["wikitext"].get("*", "")
-                    if "disambig" in wt.lower() and "(age of empires ii)" not in cand.lower():
+                    if any(m in wt[:400].lower() for m in ["{{disambig", "{{for|"]) and "infobox aoe2 unit" not in wt.lower():
                         continue
-                    content = wt
-                    break
+                    ibox = extract_template(wt, "Infobox AoE2 unit")
+                    if ibox:
+                        content = wt
+                        break
         except Exception:
             continue
 
@@ -465,7 +486,7 @@ CURATED_UNITS = {
     "Light Cavalry": (60, None, 7, 2.0, 0, 2, {"Monk": 10}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines, Silk Armor, Stirrups, Farimba"),
     "Hussar": (75, None, 7, 1.9, 0, 2, {"Monk": 12}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines, Silk Armor, Stirrups, Farimba"),
     "Winged Hussar": (80, None, 9, 1.9, 1, 2, {"Monk": 12}, ["Cavalry"], "Forging, Iron Casting, Blast Furnace, Scale Barding Armor, Chain Barding Armor, Plate Barding Armor, Bloodlines, Lechitic Legacy"),
-    "Pikeman": (55, None, 4, 3.05, 1, 0, {"Cavalry": 22, "Camel": 18, "War elephant": 25}, ["Infantry"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Garland Wars, Wootz Steel, Tower Shields"),
+    "Pikeman": (55, None, 4, 3.0, 0, 0, {"Cavalry": 22, "Camel": 18, "War elephant": 25}, ["Infantry"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Garland Wars, Wootz Steel, Tower Shields"),
     "Halberdier": (60, None, 6, 3.05, 1, 0, {"Cavalry": 32, "Camel": 26, "War elephant": 28}, ["Infantry"], "Forging, Iron Casting, Blast Furnace, Scale Mail Armor, Chain Mail Armor, Plate Mail Armor, Garland Wars, Wootz Steel, Tower Shields"),
     "Archer": (30, 4, None, 2.0, 0, 0, {"Spearman": 3}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring, Bogsveigar"),
     "Crossbowman": (35, 5, None, 2.0, 0, 0, {"Spearman": 3}, ["Archer"], "Fletching, Bodkin Arrow, Bracer, Padded Archer Armor, Leather Archer Armor, Ring Archer Armor, Chemistry, Thumb Ring, Bogsveigar, Cranequins"),
@@ -504,9 +525,15 @@ CURATED_UNITS = {
     "Fire Galley": (100, 1, None, 0.25, 0, 4, {"Ship": 3, "Building": 1}, ["Ship"], "Careening, Dry Dock, Siphons, Greek Fire"),
     "Fire Ship": (120, 2, None, 0.25, 0, 6, {"Ship": 4, "Building": 2}, ["Ship"], "Careening, Dry Dock, Siphons, Greek Fire"),
     "Fast Fire Ship": (140, 3, None, 0.25, 0, 8, {"Ship": 5, "Building": 3}, ["Ship"], "Careening, Dry Dock, Siphons, Greek Fire"),
-    "Demolition Raft": (45, 90, None, 0.0, 0, 1, {"Ship": 110, "Building": 110}, ["Ship"], "Careening, Dry Dock"),
-    "Demolition Ship": (60, 110, None, 0.0, 0, 2, {"Ship": 130, "Building": 130}, ["Ship"], "Careening, Dry Dock"),
-    "Heavy Demolition Ship": (70, 140, None, 0.0, 0, 3, {"Ship": 160, "Building": 160}, ["Ship"], "Careening, Dry Dock"),
+    "Hulk": (85, None, 4, 1.75, 3, 1, {"Fire Ships": 1, "Building": -3}, ["Ship"], "Forging, Iron Casting, Blast Furnace, Careening, Dry Dock"),
+    "War Hulk": (110, None, 4, 1.5, 4, 1, {"Fire Ships": 1, "Building": -3}, ["Ship"], "Forging, Iron Casting, Blast Furnace, Careening, Dry Dock"),
+    "Carrack": (135, None, 4, 1.5, 5, 1, {"Fire Ships": 1, "Building": -3}, ["Ship"], "Forging, Iron Casting, Blast Furnace, Careening, Dry Dock"),
+    "Demolition Raft": (45, 90, None, 0.0, 0, 1, {"Ship": 110, "Building": 110}, ["Ship", "Suicide unit"], "Careening, Dry Dock"),
+    "Demolition Ship": (50, 95, None, 0.0, 1, 0, {"Ship": 130, "Building": 220}, ["Ship", "Suicide unit"], "Careening, Dry Dock"),
+    "Heavy Demolition Ship": (70, 140, None, 0.0, 2, 0, {"Ship": 160, "Building": 280}, ["Ship", "Suicide unit"], "Careening, Dry Dock"),
+    "Petard": (50, 25, None, 0.0, 0, 2, {"Walls and Gates": 900, "Building": 500, "Castles": 100, "Siege weapon": 60}, ["Siege weapon", "Suicide unit"], "Siege Engineers"),
+    "Flaming Camel": (55, 20, None, 0.0, 0, 2, {"Building": 200, "Elephant": 130, "Cavalry": 50, "Camel": 50, "Siege weapon": 25}, ["Camel", "Siege weapon", "Suicide unit"], "Siege Engineers"),
+    "Saboteur": (45, 100, None, 0.0, 1, 3, {"Building": 500}, ["Suicide unit"], "Siege Engineers"),
     "Cannon Galleon": (120, 35, None, 10.0, 0, 6, {"Building": 200, "Siege weapon": 25}, ["Ship", "Gunpowder unit"], "Careening, Dry Dock, Artillery"),
     "Elite Cannon Galleon": (150, 45, None, 10.0, 0, 8, {"Building": 275, "Siege weapon": 40}, ["Ship", "Gunpowder unit"], "Careening, Dry Dock, Artillery"),
     "Dromon": (125, 50, None, 7.0, 1, 6, {"Building": 135, "Siege weapon": 20}, ["Ship", "Siege weapon"], "Careening, Dry Dock"),
@@ -565,10 +592,14 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
     if not content:
         return Unit(unit_name, 60, m_attack=10, rof=2.0, armor=1, pierce_armor=1, armor_class=["Infantry"], boost_tech=effective_boost, elite=is_elite, parsed_techs=parsed_techs)
 
-    pattern = r"(Name|HP|PAttack|MAttack|ROF|Armor|PierceArmor|AttackBonus|Class) = (.+)\n"
-    data = dict(re.findall(pattern, content))
+    ibox = extract_template(content, "Infobox AoE2 unit")
+    if not ibox:
+        ibox = extract_template(content, "Infobox")
 
-    final_name = data.get("Name", unit_name)
+    pattern = r"^\s*\|\s*([A-Za-z0-9_]+)\s*=\s*(.+?)\s*$"
+    data = dict(re.findall(pattern, ibox, re.M)) if ibox else {}
+
+    final_name = data.get("Name", unit_name).strip()
     if is_elite and not final_name.startswith("Elite "):
         final_name = f"Elite {final_name}"
 
@@ -585,12 +616,18 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
         num_match = re.search(r"([+-]?[\d.]+)", str(val))
         return float(num_match.group(1)) if num_match else 0
 
-    hp = int(parse_stat(data.get("HP")) or 50)
-    p_atk = int(parse_stat(data.get("PAttack"))) if data.get("PAttack") else None
-    m_atk = int(parse_stat(data.get("MAttack"))) if data.get("MAttack") else None
-    rof = float(parse_stat(data.get("ROF")) or 2.0)
-    arm = int(parse_stat(data.get("Armor")) or 0)
-    parm = int(parse_stat(data.get("PierceArmor")) or 0)
+    # Baseline values from CURATED_UNITS fallback if available
+    cur_base = CURATED_UNITS.get(unit_name, (50, None, 10, 2.0, 0, 0, {}, [], ""))
+    def_hp, def_patk, def_matk, def_rof, def_arm, def_parm = cur_base[0], cur_base[1], cur_base[2], cur_base[3], cur_base[4], cur_base[5]
+
+    parsed_hp = parse_stat(data.get("HP"))
+    hp = int(parsed_hp) if (parsed_hp is not None and parsed_hp > 0) else def_hp
+
+    p_atk = int(parse_stat(data.get("PAttack"))) if data.get("PAttack") else def_patk
+    m_atk = int(parse_stat(data.get("MAttack"))) if data.get("MAttack") else def_matk
+    rof = float(parse_stat(data.get("ROF")) or def_rof)
+    arm = int(parse_stat(data.get("Armor")) if data.get("Armor") is not None else def_arm)
+    parm = int(parse_stat(data.get("PierceArmor")) if data.get("PierceArmor") is not None else def_parm)
 
     bonus_str = data.get("AttackBonus", "")
     attack_bonus = {}
@@ -702,6 +739,8 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
         p_arm += 1
     if up.get("careening") and any(c in u.armor_class for c in ["Ship"]):
         p_arm += 1
+    if up.get("dry_dock") and any(c in u.armor_class for c in ["Ship"]):
+        p_arm += 1
     if up.get("carracks") and any(c in u.armor_class for c in ["Ship"]):
         m_arm += 1
         p_arm += 1
@@ -778,12 +817,16 @@ def format_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -
         special.append(f"Thumb Ring ({rate_txt})")
     if up.get("careening"):
         special.append("Careening (+1 Pierce Armor)")
+    if up.get("dry_dock"):
+        special.append("Dry Dock (+1 Pierce Armor)")
     if up.get("carracks"):
         special.append("Carracks (+1/+1 Ship Armor)")
     if civ == "Sicilians":
         special.append("Takes 33% Less Bonus Damage")
     if civ == "Romans" and any(c in u.armor_class for c in ["Infantry"]):
         special.append("2x Blacksmith Armor Effect")
+    if u.name in SUICIDE_UNITS:
+        special.append("Single-Use Explosive/Suicide Unit")
 
     special_str = ", ".join(special) if special else "None"
     bonus_str = f"+{eff['bonus']} vs opponent classes" if eff["bonus"] > 0 else "0"
@@ -799,133 +842,163 @@ Active Bonus Dmg vs Opponent: {bonus_str}
 Special Mechanics: {special_str}"""
 
 def simulate_1v1(u1: Unit, u2: Unit, civ1: str, civ2: str, up1: dict, up2: dict):
-    can_attack1 = (u1.p_attack is not None and u1.p_attack > 0) or (u1.m_attack is not None and u1.m_attack > 0)
-    can_attack2 = (u2.p_attack is not None and u2.p_attack > 0) or (u2.m_attack is not None and u2.m_attack > 0)
+    # Exclude suicide units from 1v1 calculations per user instruction
+    u1_suicide = u1.name in SUICIDE_UNITS or any("suicide" in str(c).lower() for c in u1.armor_class)
+    u2_suicide = u2.name in SUICIDE_UNITS or any("suicide" in str(c).lower() for c in u2.armor_class)
 
-    if not can_attack1 and not can_attack2:
-        return f"Neither {u1.name} ({civ1}) nor {u2.name} ({civ2}) has an attack.\n\nStalemate! Both units cannot damage each other."
+    if u1_suicide or u2_suicide:
+        msg_parts = []
+        if u1_suicide and u2_suicide:
+            msg_parts.append(f"⚠️ Both {u1.name} and {u2.name} are single-use suicide/explosive units.")
+        elif u1_suicide:
+            msg_parts.append(f"⚠️ {u1.name} is a single-use suicide/explosive unit.")
+        else:
+            msg_parts.append(f"⚠️ {u2.name} is a single-use suicide/explosive unit.")
+        msg_parts.append("1v1 sustained combat simulation is excluded for suicide units.")
+        msg_parts.append("Displaying unit attributes, blast damage, and upgrade stats below.")
+        return "\n\n".join(msg_parts)
 
     eff1 = compute_effective_stats(u1, civ1, up1, u2)
     eff2 = compute_effective_stats(u2, civ2, up2, u1)
 
-    hits1 = 0
-    time1 = 0.0
-    if can_attack1:
+    can_attack1 = (eff1["p_atk"] is not None and eff1["p_atk"] > 0) or (eff1["m_atk"] is not None and eff1["m_atk"] > 0)
+    can_attack2 = (eff2["p_atk"] is not None and eff2["p_atk"] > 0) or (eff2["m_atk"] is not None and eff2["m_atk"] > 0)
+
+    u1_label = f"{u1.name} ({civ1})"
+    u2_label = f"{u2.name} ({civ2})"
+
+    if not can_attack1 and not can_attack2:
+        return f"Neither {u1_label} nor {u2_label} has an attack.\n\nStalemate! Both units cannot damage each other."
+
+    if not can_attack2:
+        # u1 attacks non-attacking u2
         is_p1 = eff1["p_atk"] is not None
         atk1 = eff1["p_atk"] if is_p1 else eff1["m_atk"]
-        bonus1 = eff1["bonus"]
-        cur_u2_hp = eff2["hp"]
-        cur_u2_m_arm = eff2["m_arm"]
-        cur_u2_p_arm = eff2["p_arm"]
+        target_arm2 = eff2["p_arm"] if is_p1 else eff2["m_arm"]
+        dmg1 = max(1, atk1 - target_arm2) + eff1["bonus"]
+        hits1 = math.ceil(eff2["hp"] / dmg1)
+        time1 = (hits1 - 1) * eff1["rof"] if hits1 > 0 else 0.0
+        return f"{u1_label} defeats non-attacking {u2_label} in {hits1} hits ({time1:.2f}s)!\n\nOutcome: {u1_label} takes 0 damage and finishes with {eff1['hp']} HP remaining."
 
-        while cur_u2_hp > 0 and hits1 < 1000:
-            target_arm = (cur_u2_p_arm if is_p1 else cur_u2_m_arm)
+    if not can_attack1:
+        # u2 attacks non-attacking u1
+        is_p2 = eff2["p_atk"] is not None
+        atk2 = eff2["p_atk"] if is_p2 else eff2["m_atk"]
+        target_arm1 = eff1["p_arm"] if is_p2 else eff1["m_arm"]
+        dmg2 = max(1, atk2 - target_arm1) + eff2["bonus"]
+        hits2 = math.ceil(eff1["hp"] / dmg2)
+        time2 = (hits2 - 1) * eff2["rof"] if hits2 > 0 else 0.0
+        return f"{u2_label} defeats non-attacking {u1_label} in {hits2} hits ({time2:.2f}s)!\n\nOutcome: {u2_label} takes 0 damage and finishes with {eff2['hp']} HP remaining."
+
+    hp1, max_hp1 = eff1["hp"], eff1["hp"]
+    hp2, max_hp2 = eff2["hp"], eff2["hp"]
+    rof1 = eff1["rof"]
+    rof2 = eff2["rof"]
+
+    is_p1 = eff1["p_atk"] is not None
+    atk1 = eff1["p_atk"] if is_p1 else eff1["m_atk"]
+    bonus1 = eff1["bonus"]
+
+    is_p2 = eff2["p_atk"] is not None
+    atk2 = eff2["p_atk"] if is_p2 else eff2["m_atk"]
+    bonus2 = eff2["bonus"]
+
+    cur_arm1_m = eff1["m_arm"]
+    cur_arm1_p = eff1["p_arm"]
+    cur_arm2_m = eff2["m_arm"]
+    cur_arm2_p = eff2["p_arm"]
+
+    t = 0.0
+    next_atk1 = 0.0
+    next_atk2 = 0.0
+    hits1 = 0
+    hits2 = 0
+
+    max_steps = 4000
+    for _ in range(max_steps):
+        next_t = min(next_atk1, next_atk2)
+        t = next_t
+
+        hit1_now = abs(next_atk1 - t) < 1e-5
+        hit2_now = abs(next_atk2 - t) < 1e-5
+
+        dead1 = False
+        dead2 = False
+
+        if hit1_now:
+            target_arm = (cur_arm2_p if is_p1 else cur_arm2_m)
             if "leitis" in u1.name.lower() or up1.get("wootz_steel"):
                 target_arm = 0
             dmg = max(1, atk1 - target_arm) + bonus1
-
             if hits1 == 0:
                 if "coustillier" in u1.name.lower():
-                    dmg += (40 if u1.elite else 35)
+                    dmg += (40 if getattr(u1, "elite", False) else 35)
                 elif "urumi" in u1.name.lower():
-                    dmg += (10 if u1.elite else 9)
+                    dmg += (10 if getattr(u1, "elite", False) else 9)
                 elif up1.get("comitatenses"):
                     dmg += 5
                 elif up1.get("siphons"):
                     dmg += 20
-
             if "chu ko nu" in u1.name.lower():
-                extra = 4 if u1.elite else 2
-                dmg += extra * max(1, 3 - cur_u2_p_arm)
+                extra = 4 if getattr(u1, "elite", False) else 2
+                dmg += extra * max(1, 3 - cur_arm2_p)
             elif "kipchak" in u1.name.lower():
-                extra = 3 if u1.elite else 2
-                dmg += extra * max(1, 3 - cur_u2_p_arm)
+                extra = 3 if getattr(u1, "elite", False) else 2
+                dmg += extra * max(1, 3 - cur_arm2_p)
 
-            cur_u2_hp -= dmg
+            hp2 -= dmg
             hits1 += 1
-
+            next_atk1 += rof1
             if "obuch" in u1.name.lower():
-                cur_u2_m_arm = max(0, cur_u2_m_arm - 1)
-                cur_u2_p_arm = max(0, cur_u2_p_arm - 1)
+                cur_arm2_m = max(0, cur_arm2_m - 1)
+                cur_arm2_p = max(0, cur_arm2_p - 1)
+            if hp2 <= 0:
+                dead2 = True
 
-        time1 = (hits1 - 1) * eff1["rof"] if hits1 > 0 else 0.0
-
-    hits2 = 0
-    time2 = 0.0
-    if can_attack2:
-        is_p2 = eff2["p_atk"] is not None
-        atk2 = eff2["p_atk"] if is_p2 else eff2["m_atk"]
-        bonus2 = eff2["bonus"]
-        cur_u1_hp = eff1["hp"]
-        cur_u1_m_arm = eff1["m_arm"]
-        cur_u1_p_arm = eff1["p_arm"]
-
-        while cur_u1_hp > 0 and hits2 < 1000:
-            target_arm = (cur_u1_p_arm if is_p2 else cur_u1_m_arm)
+        if hit2_now:
+            target_arm = (cur_arm1_p if is_p2 else cur_arm1_m)
             if "leitis" in u2.name.lower() or up2.get("wootz_steel"):
                 target_arm = 0
             dmg = max(1, atk2 - target_arm) + bonus2
-
             if hits2 == 0:
                 if "coustillier" in u2.name.lower():
-                    dmg += (40 if u2.elite else 35)
+                    dmg += (40 if getattr(u2, "elite", False) else 35)
                 elif "urumi" in u2.name.lower():
-                    dmg += (10 if u2.elite else 9)
+                    dmg += (10 if getattr(u2, "elite", False) else 9)
                 elif up2.get("comitatenses"):
                     dmg += 5
                 elif up2.get("siphons"):
                     dmg += 20
-
             if "chu ko nu" in u2.name.lower():
-                extra = 4 if u2.elite else 2
-                dmg += extra * max(1, 3 - cur_u1_p_arm)
+                extra = 4 if getattr(u2, "elite", False) else 2
+                dmg += extra * max(1, 3 - cur_arm1_p)
             elif "kipchak" in u2.name.lower():
-                extra = 3 if u2.elite else 2
-                dmg += extra * max(1, 3 - cur_u1_p_arm)
+                extra = 3 if getattr(u2, "elite", False) else 2
+                dmg += extra * max(1, 3 - cur_arm1_p)
 
-            cur_u1_hp -= dmg
+            hp1 -= dmg
             hits2 += 1
-
+            next_atk2 += rof2
             if "obuch" in u2.name.lower():
-                cur_u1_m_arm = max(0, cur_u1_m_arm - 1)
-                cur_u1_p_arm = max(0, cur_u1_p_arm - 1)
+                cur_arm1_m = max(0, cur_arm1_m - 1)
+                cur_arm1_p = max(0, cur_arm1_p - 1)
+            if hp1 <= 0:
+                dead1 = True
 
-        time2 = (hits2 - 1) * eff2["rof"] if hits2 > 0 else 0.0
+        if dead1 and dead2:
+            return f"A draw! Both {u1_label} and {u2_label} eliminate each other simultaneously in {hits1} vs {hits2} hits at {t:.2f}s."
+        elif dead2:
+            rem1 = max(0, hp1)
+            dealt2 = max_hp1 - rem1
+            pct1 = (rem1 / max_hp1) * 100 if max_hp1 > 0 else 0
+            return f"{u1_label} wins 1v1 against {u2_label}!\n\nOutcome:\n- {u1_label} lands lethal strike in {hits1} hits ({t:.2f}s).\n- {u2_label} dealt {dealt2} dmg across {hits2} hits.\n- Winner surviving HP: {rem1} / {max_hp1} HP remaining ({pct1:.1f}%)."
+        elif dead1:
+            rem2 = max(0, hp2)
+            dealt1 = max_hp2 - rem2
+            pct2 = (rem2 / max_hp2) * 100 if max_hp2 > 0 else 0
+            return f"{u2_label} wins 1v1 against {u1_label}!\n\nOutcome:\n- {u2_label} lands lethal strike in {hits2} hits ({t:.2f}s).\n- {u1_label} dealt {dealt1} dmg across {hits1} hits.\n- Winner surviving HP: {rem2} / {max_hp2} HP remaining ({pct2:.1f}%)."
 
-    if not can_attack2:
-        return f"{u1.name} ({civ1}) defeats non-attacking {u2.name} ({civ2}) in {hits1} hits ({time1:.2f}s)!\n\nOutcome: {u1.name} ({civ1}) takes 0 damage and finishes with {eff1['hp']} HP remaining."
-
-    if not can_attack1:
-        return f"{u2.name} ({civ2}) defeats non-attacking {u1.name} ({civ1}) in {hits2} hits ({time2:.2f}s)!\n\nOutcome: {u2.name} ({civ2}) takes 0 damage and finishes with {eff2['hp']} HP remaining."
-
-    # Compare time-to-kill
-    u1_label = f"{u1.name} ({civ1})"
-    u2_label = f"{u2.name} ({civ2})"
-
-    if math.isclose(time1, time2, abs_tol=0.01):
-        return f"A draw! Both {u1_label} and {u2_label} eliminate each other simultaneously in {hits1} vs {hits2} hits at {time1:.2f}s."
-    elif time1 < time2:
-        survived_hits = math.floor(time1 / eff2["rof"])
-        is_p2 = eff2["p_atk"] is not None
-        atk2 = eff2["p_atk"] if is_p2 else eff2["m_atk"]
-        target_arm1 = eff1["p_arm"] if is_p2 else eff1["m_arm"]
-        if "leitis" in u2.name.lower() or up2.get("wootz_steel"):
-            target_arm1 = 0
-        base_dmg2 = max(1, atk2 - target_arm1) + eff2["bonus"]
-        taken = survived_hits * base_dmg2
-        rem_hp = max(1, eff1["hp"] - taken)
-        return f"{u1_label} wins 1v1 against {u2_label}!\n\nOutcome:\n- {u1_label} kills in {hits1} hits ({time1:.2f}s).\n- {u2_label} dealt {taken} dmg over {survived_hits} hits.\n- Winner surviving HP: {rem_hp} / {eff1['hp']} HP remaining."
-    else:
-        survived_hits = math.floor(time2 / eff1["rof"])
-        is_p1 = eff1["p_atk"] is not None
-        atk1 = eff1["p_atk"] if is_p1 else eff1["m_atk"]
-        target_arm2 = eff2["p_arm"] if is_p1 else eff2["m_arm"]
-        if "leitis" in u1.name.lower() or up1.get("wootz_steel"):
-            target_arm2 = 0
-        base_dmg1 = max(1, atk1 - target_arm2) + eff1["bonus"]
-        taken = survived_hits * base_dmg1
-        rem_hp = max(1, eff2["hp"] - taken)
-        return f"{u2_label} wins 1v1 against {u1_label}!\n\nOutcome:\n- {u2_label} kills in {hits2} hits ({time2:.2f}s).\n- {u1_label} dealt {taken} dmg over {survived_hits} hits.\n- Winner surviving HP: {rem_hp} / {eff2['hp']} HP remaining."
+    return f"Stalemate! Battle between {u1_label} and {u2_label} timed out after {max_steps} iterations."
 
 MELEE_ATK_NAMES = {0: "None (+0)", 1: "Forging (+1)", 2: "Iron Casting (+2)", 3: "Blast Furnace (+4)"}
 MELEE_ATK_VALUES = {0: 0, 1: 1, 2: 2, 3: 4}

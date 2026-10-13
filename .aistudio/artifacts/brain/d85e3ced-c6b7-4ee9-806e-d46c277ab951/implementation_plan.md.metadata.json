@@ -1,6 +1,6 @@
 {
-  "summary": "Revised implementation plan clarifying that Siphons is a general University technology (introduced in The Last Chieftains) available to multiple civilizations, and updating the Fandom API parser to dynamically check technology availability for every selected unit using cached live data.",
-  "updatedAt": "2026-10-12T12:43:21.190788881Z",
+  "summary": "Implementation plan for writing two dedicated Python test programs:\n1. `test_data_extraction_suite.py`: Comprehensive test suite for all 144 units comparing live Fandom API extraction against curated baseline fallbacks, validating stats (HP, attack, armor, ROF, attack bonuses, armor classes, tech boosts).\n2. `test_combat_calculation_suite.py`: Exhaustive calculation testing suite verifying all combat edge cases in `aoe_sl.py` (Knight vs Pikeman, suicide unit exclusions, Obuch shredding, Leitis armor ignore, Charge attack, Multishot, Dry Dock, non-attacking units, simultaneous draws).\n3. Verification of `aoe_sl.py` ensuring readiness for Git push and clean Streamlit app deployment.",
+  "updatedAt": "2026-10-13T14:52:33.079641447Z",
   "requestFeedback": true,
   "userFacing": true
 }
