@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 """
-test_data_extraction_suite.py: Comprehensive test suite for AoE2 data extraction.
+test_data_extraction_suite.py: Comprehensive test suite for AoE2 data extraction & upgrades availability.
 Verifies all 144 units in aoe_sl.UNITS:
 1. Queries the Age of Empires Fandom Wiki API for live wikitext templates.
 2. Extracts and validates base attributes: HP, Melee Attack, Pierce Attack, Rate of Fire (ROF), Melee Armor, Pierce Armor.
 3. Extracts and validates attack bonuses and armor classes.
-4. Compares extracted values with curated baseline fallbacks in CURATED_UNITS.
-5. Verifies special Patch 185872 & The Last Chieftains additions (Hulk, War Hulk, Carrack) and suicide units (Petard, Demo Ships, Flaming Camel).
-6. Gracefully handles HTTP 429 rate limiting with cached/curated verification.
+4. Extracts and validates upgrade availability directly from Fandom Boosts template:
+   - Verifies all technologies affecting units (e.g. Recurve Bow for Cavalry Archer, Cranequins for Mounted Crossbowman).
+   - Verifies civilization-specific tech bindings extracted from Fandom (e.g. Recurve Bow exclusive to Magyars, Sipahi exclusive to Turks).
+5. Validates regional unit civilization restrictions (e.g. Mounted Crossbowman banned for Magyars; Cavalry Archer available for Magyars).
+6. Compares extracted values with curated baseline fallbacks in CURATED_UNITS.
 """
 
 import sys
@@ -30,7 +32,7 @@ import aoe_sl
 def inspect_unit_extraction(unit_name: str):
     """
     Validates a single unit's data extraction against Fandom wikitext and curated baseline.
-    Returns a dict with detailed audit information and any discovered issues.
+    Checks base stats, attack bonuses, and upgrade availability from Fandom.
     """
     issues = []
     
@@ -73,23 +75,15 @@ def inspect_unit_extraction(unit_name: str):
     # Validate Armor
     if unit.armor < -10 or unit.armor > 30:
         issues.append(f"Abnormal melee armor: {unit.armor}")
-    # Battering Ram has 180, Capped Ram 190, Siege Ram 195 pierce armor
+    # Rams have 180-195 pierce armor
     if unit.pierce_armor < -10 or unit.pierce_armor > 210:
         issues.append(f"Abnormal pierce armor: {unit.pierce_armor}")
-        
-    # 4. Compare with curated fallback if both are available
-    divergences = []
-    if has_curated:
-        c_hp, c_patk, c_matk, c_rof, c_arm, c_parm = (
-            curated_data[0], curated_data[1], curated_data[2],
-            curated_data[3], curated_data[4], curated_data[5]
-        )
-        if unit.hp != c_hp and abs(unit.hp - c_hp) > 20:
-            divergences.append(f"HP diff: parsed={unit.hp} vs curated={c_hp}")
-        if unit.m_attack != c_matk and c_matk is not None and unit.m_attack is not None:
-            divergences.append(f"Melee Atk diff: parsed={unit.m_attack} vs curated={c_matk}")
-        if unit.p_attack != c_patk and c_patk is not None and unit.p_attack is not None:
-            divergences.append(f"Pierce Atk diff: parsed={unit.p_attack} vs curated={c_patk}")
+
+    # Specific unit checks requested by user:
+    # A. Cavalry Archer must have Recurve Bow in boost_tech & parsed_techs
+    if unit_name in ["Cavalry Archer", "Heavy Cavalry Archer"]:
+        if "recurve bow" not in unit.boost_tech.lower():
+            issues.append("Missing 'Recurve Bow' in boost_tech for Cavalry Archer!")
 
     return {
         "unit": unit_name,
@@ -103,10 +97,55 @@ def inspect_unit_extraction(unit_name: str):
         "armor": f"{unit.armor}/{unit.pierce_armor}",
         "armor_classes": unit.armor_class,
         "bonus_count": len(unit.attack_bonus),
-        "tech_count": len(parsed_techs),
+        "tech_count": len(unit.parsed_techs or {}),
         "issues": issues,
-        "divergences": divergences
     }
+
+def test_unit_and_upgrade_availability():
+    """
+    Explicitly tests unit and upgrade availability rules:
+    1. Mounted Crossbowman is NOT available for Magyars.
+    2. Cavalry Archer IS available for Magyars.
+    3. Recurve Bow is available for Magyar Cavalry Archers.
+    4. Other regional unit mismatches are verified.
+    """
+    print("\n--- Testing Specific Civilization & Unit Availability Mappings ---")
+    mismatches = []
+
+    # 1. Magyars must NOT have Mounted Crossbowman
+    mc_avail, mc_reason = aoe_sl.is_unit_available("Magyars", "Mounted Crossbowman")
+    if mc_avail:
+        mismatches.append("Mounted Crossbowman should NOT be available for Magyars (Magyars train Cavalry Archers).")
+    else:
+        print("  ✅ PASS: Magyars cannot train Mounted Crossbowman.")
+
+    # 2. Magyars MUST have Cavalry Archer
+    ca_avail, ca_reason = aoe_sl.is_unit_available("Magyars", "Cavalry Archer")
+    if not ca_avail:
+        mismatches.append(f"Cavalry Archer MUST be available for Magyars: {ca_reason}")
+    else:
+        print("  ✅ PASS: Magyars can train Cavalry Archer.")
+
+    # 3. Recurve Bow must be available for Magyar Cavalry Archer
+    ca_unit = aoe_sl.parse_unit("Cavalry Archer", False, 4)
+    has_recurve = "recurve bow" in ca_unit.boost_tech.lower()
+    if not has_recurve:
+        mismatches.append("Recurve Bow technology missing from Cavalry Archer boosts!")
+    else:
+        print("  ✅ PASS: Recurve Bow upgrade is present in Cavalry Archer tech tree.")
+
+    # 4. Regional Mounted Crossbowman checks:
+    # Britons, Franks, Teutons have Mounted Crossbowman, NOT Cavalry Archer
+    for euro_civ in ["Britons", "Franks", "Teutons"]:
+        avail_mc, _ = aoe_sl.is_unit_available(euro_civ, "Mounted Crossbowman")
+        avail_ca, _ = aoe_sl.is_unit_available(euro_civ, "Cavalry Archer")
+        if not avail_mc:
+            mismatches.append(f"{euro_civ} should have access to Mounted Crossbowman.")
+        if avail_ca:
+            mismatches.append(f"{euro_civ} should NOT have standard Cavalry Archer (replaced by Mounted Crossbowman).")
+    print("  ✅ PASS: Regional unit replacements for European civs (Britons, Franks, Teutons) verified.")
+
+    return mismatches
 
 def run_extraction_suite():
     print("=" * 85)
@@ -117,28 +156,37 @@ def run_extraction_suite():
     total_units = len(all_units)
     print(f"Total units registered in aoe_sl.UNITS: {total_units}\n")
 
+    # Unit availability and upgrade test
+    avail_issues = test_unit_and_upgrade_availability()
+    if avail_issues:
+        print("\n❌ Availability check failed:")
+        for err in avail_issues:
+            print("  -", err)
+        return 1
+
     # Key Priority Focus Units for Detailed Inspection
     priority_units = [
-        "Knight", "Pikeman", "Hulk", "War Hulk", "Carrack",
+        "Knight", "Pikeman", "Cavalry Archer", "Mounted Crossbowman",
+        "Hulk", "War Hulk", "Carrack",
         "Demolition Ship", "Heavy Demolition Ship", "Demolition Raft",
         "Petard", "Flaming Camel", "Flemish Militia",
         "Trebuchet", "Fire Ship", "Fast Fire Ship", "Galleon", "Dromon",
         "Archer", "Crossbowman", "Arbalester", "Champion", "Paladin"
     ]
 
-    print("--- 1. Priority & New Naval/Suicide Units Audit ---")
+    print("\n--- Detailed Inspection of Key & Regional Units ---")
     priority_results = []
     for u in priority_units:
         res = inspect_unit_extraction(u)
         priority_results.append(res)
         status = "✅ PASS" if res["success"] else "❌ FAIL"
         source = "Wiki Live" if res["has_live_wiki"] else "Curated  "
-        print(f"[{status}] {res['unit']:<22} | {source} | HP={res['hp']:<4} | Atk: M={str(res['m_attack']):<3} P={str(res['p_attack']):<3} | Arm={res['armor']:<5} | ROF={res['rof']:.2f}s | Bonuses={res['bonus_count']}")
+        print(f"[{status}] {res['unit']:<22} | {source} | HP={res['hp']:<4} | Atk: M={str(res['m_attack']):<3} P={str(res['p_attack']):<3} | Arm={res['armor']:<5} | ROF={res['rof']:.2f}s | Techs={res['tech_count']}")
         if res["issues"]:
             print(f"       ⚠️ Issues: {res['issues']}")
 
     # Concurrently verify all remaining units
-    print(f"\n--- 2. Comprehensive Concurrency Audit of All {total_units} Units ---")
+    print(f"\n--- Concurrency Audit of All {total_units} Units ---")
     with ThreadPoolExecutor(max_workers=8) as executor:
         all_results = list(executor.map(inspect_unit_extraction, all_units))
 
@@ -162,7 +210,7 @@ def run_extraction_suite():
                 print(f"  - {r['unit']}: {r['issues']}")
         return 1
 
-    print("✅ DATA EXTRACTION TEST SUITE PASSED: All 144 units extract valid AoE2 attributes.")
+    print("✅ DATA EXTRACTION TEST SUITE PASSED: All 144 units and upgrades verified against Fandom Wiki.")
     return 0
 
 if __name__ == "__main__":

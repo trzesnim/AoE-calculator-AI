@@ -295,7 +295,13 @@ UNIT_RESTRICTIONS = {
         "allowed": ["Bengalis", "Dravidians", "Gurjaras", "Hindustanis"]
     },
     "Mounted Crossbowman": {
-        "allowed": ["Bohemians", "Britons", "Burgundians", "Franks", "Lithuanians", "Magyars", "Poles", "Portuguese", "Romans", "Saxons", "Sicilians", "Slavs"]
+        "allowed": ["Britons", "Celts", "Danes", "Franks", "Italians", "Poles", "Portuguese", "Romans", "Saxons", "Sicilians", "Spanish", "Teutons", "Varangians", "Vikings"]
+    },
+    "Cavalry Archer": {
+        "banned": ["Britons", "Celts", "Danes", "Franks", "Italians", "Poles", "Portuguese", "Romans", "Saxons", "Sicilians", "Spanish", "Teutons", "Varangians", "Vikings"]
+    },
+    "Heavy Cavalry Archer": {
+        "banned": ["Britons", "Celts", "Danes", "Franks", "Italians", "Poles", "Portuguese", "Romans", "Saxons", "Sicilians", "Spanish", "Teutons", "Varangians", "Vikings"]
     },
     "Houfnice": {
         "allowed": ["Bohemians"]
@@ -452,13 +458,16 @@ def fetch_wiki_unit(unit_name: str):
 
     parsed_techs = {}
     if boost_block:
-        for line in boost_block.splitlines():
-            icons = re.findall(r"\{\{2icons\|([^}|]+)", line)
-            if not icons:
+        # Split on each technology entry starting with {{2icons|
+        chunks = boost_block.split("{{2icons|")[1:]
+        for ch in chunks:
+            tech_name = re.split(r"[\|\}]", ch)[0].strip()
+            if not tech_name:
                 continue
-            tech_name = icons[0].strip()
-            civs = re.findall(r"\[\[(?:[^|\]]+\|)?([A-Za-z]+)\]\]\s*only", line, re.I)
-            descs = re.findall(r"\(([^)]+)\)", line)
+            # Extract segment up to next attribute pipe or template closing
+            segment = ch.split("{{2icons|")[0]
+            civs = re.findall(r"\[\[(?:[^|\]]+\|)?([A-Za-z]+)\]\]\s*only", segment[:200], re.I)
+            descs = re.findall(r"\(([^)]+)\)", segment[:200])
             clean_descs = [d for d in descs if "only" not in d.lower()]
             desc_str = ", ".join(clean_descs) if clean_descs else ""
             desc_str = re.sub(r"\{\{[^}]+\}\}", "", desc_str).strip()
