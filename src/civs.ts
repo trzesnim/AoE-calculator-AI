@@ -48,6 +48,34 @@ export interface CivData {
   getCivBonuses: (unitName: string, age: number) => CivBonus | null;
 }
 
+import { CIV_UNIT_MAP } from './civUnitsData';
+
+// Dynamic cache for tech tree map fetched directly from /civ_units_techtree.json
+let liveCivUnitMap: Record<string, string[]> = { ...CIV_UNIT_MAP };
+
+// Asynchronously fetch and refresh the complete JSON map directly from trusted source
+if (typeof window !== 'undefined') {
+  fetch('/civ_units_techtree.json')
+    .then((res) => {
+      if (res.ok) return res.json();
+      throw new Error(`Failed to fetch civ_units_techtree.json: ${res.statusText}`);
+    })
+    .then((data: Record<string, string[]>) => {
+      if (data && typeof data === 'object') {
+        liveCivUnitMap = { ...CIV_UNIT_MAP, ...data };
+        // Ensure Generic has access to all units
+        const allUnits = new Set<string>();
+        Object.values(liveCivUnitMap).forEach((list) => {
+          if (Array.isArray(list)) list.forEach((u) => allUnits.add(u));
+        });
+        liveCivUnitMap['Generic'] = Array.from(allUnits);
+      }
+    })
+    .catch((err) => {
+      console.warn('Could not refresh liveCivUnitMap, falling back to embedded trusted CIV_UNIT_MAP:', err);
+    });
+}
+
 // Team units available to EVERY civ through allied bonuses:
 export const ALL_CIV_TEAM_UNITS = [
   'Condottiero',
@@ -1342,13 +1370,43 @@ export const CIV_NAMES: string[] = Object.keys(CIVILIZATIONS);
 
 // Helpers
 export function isUnitAvailableForCiv(unitName: string, civName: string): boolean {
+  if (!unitName || !civName) return true;
   if (civName === 'Generic') return true;
 
-  // Team units available to all civs:
+  // 1. Team units available to all civs through allied bonuses:
   if (ALL_CIV_TEAM_UNITS.some((tu) => tu.toLowerCase() === unitName.toLowerCase())) {
     return true;
   }
 
+  // Normalize names for comparison
+  const normUnit = unitName
+    .replace(/^Elite\s+/i, '')
+    .replace(/\s*\(Packed\)$/i, '')
+    .trim()
+    .toLowerCase();
+
+  // 2. Query trusted JSON map from SiegeEngineers tech tree:
+  const mapToUse = liveCivUnitMap || CIV_UNIT_MAP;
+  if (mapToUse) {
+    // Find matching civilization key (case-insensitive)
+    const civKey = Object.keys(mapToUse).find((k) => k.toLowerCase() === civName.toLowerCase());
+    if (civKey && Array.isArray(mapToUse[civKey])) {
+      const allowedUnits = mapToUse[civKey];
+      const isAllowedInTree = allowedUnits.some((u) => {
+        const normAllowed = u
+          .replace(/^Elite\s+/i, '')
+          .replace(/\s*\(Packed\)$/i, '')
+          .trim()
+          .toLowerCase();
+        return normAllowed === normUnit || u.toLowerCase() === unitName.toLowerCase();
+      });
+
+      // If civilization is found in the trusted tech tree map, this authoritative result decides!
+      return isAllowedInTree;
+    }
+  }
+
+  // 3. Fallback to CIVILIZATIONS database if civilization is not present in external map
   const civ = CIVILIZATIONS[civName];
   if (!civ) return true;
 
