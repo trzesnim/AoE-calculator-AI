@@ -54,7 +54,7 @@ SEPARATE_PAGE_ELITES = {
 
 UNIT_LINE_BASE = {
     "cavalier": "Knight", "paladin": "Knight", "savar": "Knight",
-    "long swordsman": "Man-at-Arms", "two-handed swordsman": "Man-at-Arms",
+    "man-at-arms": "Militia", "long swordsman": "Man-at-Arms", "two-handed swordsman": "Man-at-Arms",
     "champion": "Two-Handed Swordsman", "legionary": "Man-at-Arms",
     "pikeman": "Spearman", "halberdier": "Pikeman",
     "crossbowman": "Archer", "arbalester": "Crossbowman",
@@ -250,9 +250,9 @@ def check_fandom_availability(wikitext: str, civ: str) -> bool:
         civ_pattern = "Maya|Mayans" if civ == "Mayans" else ("Inca|Incas" if civ == "Incas" else re.escape(civ))
         if re.search(r"\b(?:" + civ_pattern + r")\b", val, re.I):
             return True
-        if any(c in val for c in ["{{2icons|", "[[", "Bengalis", "Britons", "Franks", "Aztecs", "Tupi", "Dravidians", "Gurjaras", "Cumans"]):
+        if any(c in val for c in ["{{2icons|", "[["]) or any(re.search(r"\b" + re.escape(c) + r"\b", val, re.I) for c in CIVILIZATIONS if c != "Generic"):
             return False
-
+            
     # 2. In Fandom wikitext, {{Availability|...}} template
     m_avail = re.search(r"\{\{Availability\|([^}]+)\}\}", wikitext, re.I)
     if m_avail:
@@ -436,7 +436,7 @@ def fetch_wiki_unit(unit_name: str, is_elite: bool = False):
         m_only = re.search(r"\(([^)]*?)\s+only\)", segment, re.I)
         if m_only:
             civs_part = m_only.group(1)
-            civ_names = re.findall(r"\[\[(?:[^|\]]+\|)?([^\]]+)\]\]", civs_part)
+            civ_names = re.findall(r"\[\[([^|\]]+)(?:\|[^\]]+)?\]\]", civs_part)
             if not civ_names:
                 civ_names = [c.strip() for c in re.split(r"[,/]", civs_part) if c.strip()]
             before_only = segment[:m_only.start()]
@@ -466,7 +466,9 @@ def fetch_wiki_unit(unit_name: str, is_elite: bool = False):
             if not any(k in c_val.lower() for k in ["see table", "all", "various"]):
                 parsed_c = re.findall(r"\{\{2icons\|([^}|]+)", c_val)
                 if not parsed_c:
-                    parsed_c = re.findall(r"\[\[(?:[^|\]]+\|)?([A-Za-z]+)\]\]", c_val)
+                  parsed_c = re.findall(r"\[\[([^|\]]+)(?:\|[^\]]+)?\]\]", c_val)
+                if not parsed_c:
+                  parsed_c = [c for c in CIVILIZATIONS if c != "Generic" and re.search(r"\b" + re.escape(c) + r"\b", c_val, re.I)]
                 wiki_allowed_civs = [normalize_civ_name(c) for c in parsed_c if c.strip() and "allies" not in c.lower()]
 
     return content, boost_tech_str, parsed_techs, tech_civ_restrictions, wiki_allowed_civs
@@ -476,14 +478,22 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
     norm = unit_name.lower()
     content, boost_tech_str, parsed_techs, tech_civ_restrictions, wiki_allowed_civs = fetch_wiki_unit(unit_name, is_elite=is_elite)
 
-    base_line_u = UNIT_LINE_BASE.get(norm)
-    if base_line_u or is_elite:
-         _, base_boost, _, base_restr, _ = fetch_wiki_unit(base_line_u or unit_name, is_elite=False)
-         if base_boost and base_boost not in boost_tech_str:
-             boost_tech_str = boost_tech_str + "\n" + base_boost
-         for tk, tv in base_restr.items():
-             if tk not in tech_civ_restrictions:
-                 tech_civ_restrictions[tk] = tv
+    tech_civ_restrictions = dict(tech_civ_restrictions)
+    parents_to_check = []
+    if is_elite:
+        parents_to_check.append(unit_name)
+    cur_p = UNIT_LINE_BASE.get(norm)
+    while cur_p and cur_p not in parents_to_check:
+        parents_to_check.append(cur_p)
+        cur_p = UNIT_LINE_BASE.get(cur_p.lower())
+
+    for p_unit in parents_to_check:
+        _, base_boost, _, base_restr, _ = fetch_wiki_unit(p_unit, is_elite=False)
+        if base_boost and base_boost not in boost_tech_str:
+            boost_tech_str = boost_tech_str + "\n" + base_boost
+        for tk, tv in base_restr.items():
+            if tk not in tech_civ_restrictions:
+                tech_civ_restrictions[tk] = tv
 
     if not content:
         st.error(f"Failed to fetch unit stats for **{unit_name}** from Fandom MediaWiki API.")
@@ -502,65 +512,66 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
     final_name = f"Elite {unit_name}" if is_elite else unit_name
 
     def parse_stat(val):
-        if not val:
-            return None
-        val_str = str(val)
+      if not val:
+          return None
+      val_str = str(val).replace("\u2212", "-").replace("\u2013", "-")
 
-        # Clean File tags and image links
-        val_str = re.sub(r"\[\[File:[^\]]+\]\]", "", val_str, flags=re.I)
-        val_str = re.sub(r"\[\[(?:[^|\]]+\|)?([^\]]+)\]\]", r"\g<1>", val_str)
+      # Clean File tags and image links
+      val_str = re.sub(r"\[\[File:[^\]]+\]\]", "", val_str, flags=re.I)
+      val_str = re.sub(r"\[\[(?:[^|\]]+\|)?([^\]]+)\]\]", r"\g<1>", val_str)
 
-        # Clean tooltips with explicit backreference
-        val_str = re.sub(r"\{\{tt\|([^|]+)\|.*?\}\}", r"\g<1>", val_str)
+      # Clean tooltips with explicit backreference
+      val_str = re.sub(r"\{\{tt\|([^|]+)\|.*?\}\}", r"\g<1>", val_str)
 
-        # 1. Check for multiline <br> segments (e.g. Castle / Imperial / Elite)
-        segments = re.split(r"<br\s*/?>", val_str, flags=re.I)
-        if len(segments) > 1:
-            resolved = False
-            if is_elite:
-                elite_segs = [s for s in segments if "elite" in s.lower()]
-                if elite_segs:
-                    val_str = elite_segs[-1]
-                    resolved = True
-            if not resolved:
-                age_keywords = {1: ["dark"], 2: ["feudal"], 3: ["castle"], 4: ["imperial"]}
-                for a in range(age, 0, -1):
-                    keys = age_keywords[a]
-                    matched = [s for s in segments if any(k in s.lower() for k in keys) and "elite" not in s.lower()]
-                    if matched:
-                        val_str = matched[-1]
-                        break
+      # 1. Check inline age-dependent stats (both "Age}} 5" and "5 (Age)" formats)
+      age_map = {1: "dark age", 2: "feudal age", 3: "castle age", 4: "imperial age"}
+      found_dict = {}
+      for m in re.finditer(r"(Dark Age|Feudal Age|Castle Age|Imperial Age)(?:\|[^}]*)?\}\}\s*([+-]?\d+(?:\.\d+)?)", val_str, re.I):
+          found_dict[m.group(1).lower()] = float(m.group(2))
+      for m in re.finditer(r"([+-]?\d+(?:\.\d+)?)\s*\([^)]*?(Dark Age|Feudal Age|Castle Age|Imperial Age)", val_str, re.I):
+          found_dict[m.group(2).lower()] = float(m.group(1))
+      if found_dict:
+          for a in range(age, 0, -1):
+              if age_map[a] in found_dict:
+                  return found_dict[age_map[a]]
 
-        # 2. Check inline age-dependent stats
-        age_map = {1: "Dark Age", 2: "Feudal Age", 3: "Castle Age", 4: "Imperial Age"}
-        matches = re.findall(r"(Dark Age|Feudal Age|Castle Age|Imperial Age)\}\}\s*(\d+)", val_str, re.I)
-        if matches:
-            found_dict = {m[0].lower(): int(m[1]) for m in matches}
-            target_val = None
-            for a in range(age, 0, -1):
-                a_name = age_map[a].lower()
-                if a_name in found_dict:
-                    target_val = found_dict[a_name]
-                    break
-            if target_val is not None:
-                return float(target_val)
+      # 2. Check for multiline <br> segments (e.g. Castle / Imperial / Elite)
+      segments = re.split(r"<br\s*/?>", val_str, flags=re.I)
+      if len(segments) > 1:
+          resolved = False
+          if is_elite:
+              elite_segs = [s for s in segments if "elite" in s.lower()]
+              if elite_segs:
+                  val_str = elite_segs[-1]
+                  resolved = True
+          if not resolved:
+              age_keywords = {1: ["dark"], 2: ["feudal"], 3: ["castle"], 4: ["imperial"]}
+              for a in range(age, 0, -1):
+                  keys = age_keywords[a]
+                  matched = [s for s in segments if any(k in s.lower() for k in keys) and "elite" not in s.lower()]
+                  if matched:
+                      val_str = matched[-1]
+                      resolved = True
+                      break
+          if not resolved:
+              val_str = segments[0]
 
-        # 3. Split by comma for base vs elite
-        comma_match = re.search(r"(.+?)\s*,\s*(.+)", val_str)
-        if comma_match:
-            val_str = comma_match.group(2) if is_elite else comma_match.group(1)
+      # 3. Split by comma for base vs elite
+      comma_match = re.search(r"(.+?)\s*,\s*(.+)", val_str)
+      if comma_match:
+          val_str = comma_match.group(2) if is_elite else comma_match.group(1)
 
-        # 4. Strip <br />(\d+) <small> if present
-        br_match = re.search(r"<br\s*/?>(\d+)\s*<small>", val_str, re.I)
-        if br_match:
-            val_str = br_match.group(1)
+      # 4. Strip <br />(\d+) <small> if present
+      br_match = re.search(r"<br\s*/?>([+-]?\d+)\s*<small>", val_str, re.I)
+      if br_match:
+          val_str = br_match.group(1)
 
-        # 5. Strip templates like {{AoE2Icon|...}}, {{2icons|...}}
-        val_str = re.sub(r"\{\{[^}]+\}\}", "", val_str)
+      # 5. Strip templates like {{AoE2Icon|...}}, {{2icons|...}}
+      val_str = re.sub(r"\{\{[^}]+\}\}", "", val_str)
 
-        # 6. Extract primary number (requires at least one digit)
-        num_match = re.search(r"([+-]?\d+(?:\.\d+)?)", str(val_str))
-        return float(num_match.group(1)) if num_match else 0.0
+      # 6. Extract primary number (requires at least one digit)
+      num_match = re.search(r"([+-]?\d+(?:\.\d+)?)", str(val_str))
+      return float(num_match.group(1)) if num_match else 0.0
 
     # Parse Cost
     food_cost = int(parse_stat(data.get("Food")) or 0)
@@ -589,19 +600,19 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
     bonus_str = data.get("AttackBonus", "")
     attack_bonus = {}
     if bonus_str:
-     clean_bonus_str = re.sub(r"\{\{tt\|([^|]+)\|.*?\}\}", r"\g<1>", str(bonus_str))
-     for b_line in re.split(r"[\r\n]+|<br\s*/?>", clean_bonus_str, flags=re.I):
-         m_b = re.search(r"([+-]?\d+(?:\s*,\s*[+-]?\d+)?)\s*(?:\([^)]*\))?\s*vs\.?\s*.*?2class\|([^}|]+)", b_line, re.I)
-         if m_b:
-             nums, cls = m_b.group(1), m_b.group(2)
-             parts = [p.strip() for p in nums.split(",")]
-             val = parts[1] if (is_elite and len(parts) > 1) else parts[0]
-             try:
-                 norm_cls = normalize_class_name(cls)
-                 val_int = int(val)
-                 attack_bonus[norm_cls] = val_int
-             except ValueError:
-                 pass
+      clean_bonus_str = re.sub(r"\{\{tt\|([^|]+)\|.*?\}\}", r"\g<1>", str(bonus_str)).replace("\u2212", "-")
+      for b_line in re.split(r"[\r\n]+|<br\s*/?>", clean_bonus_str, flags=re.I):
+          m_b = re.search(r"([+-]?\d+(?:\s*,\s*[+-]?\d+)?)\s*(?:\([^)]*\))?\s*vs\.?\s*.*?2class\|([^}|]+)", b_line, re.I)
+          if m_b:
+              nums, cls = m_b.group(1), m_b.group(2)
+              parts = [p.strip() for p in nums.split(",")]
+              val = parts[1] if (is_elite and len(parts) > 1) else parts[0]
+              try:
+                  norm_cls = normalize_class_name(cls)
+                  val_int = int(val)
+                  attack_bonus[norm_cls] = val_int
+              except ValueError:
+                  pass
 
     if "skirmisher" in norm:
         attack_bonus["unshielded"] = 4 if is_elite else 3
@@ -702,7 +713,7 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
         rof *= 0.833
     elif civ == "Saracens" and any(c in norm_classes for c in ["ship"]) and any(w in u.name.lower() for w in ["galley", "galleon"]):
         rof *= 0.80
-    elif civ == "Byzantines" and "fire" in u.name.lower():
+    elif civ == "Byzantines" and "ship" in norm_classes and "fire" in u.name.lower():
         rof *= 0.80
     if up.get("stirrups") and any(c in norm_classes for c in ["cavalry"]):
         rof *= 0.75
@@ -1240,7 +1251,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         civ_techs = techtree.get(civ, {}).get("techs", set()) if (civ != "Generic" and not ftt) else set()
         all_known_techs = set().union(*(d.get("techs", set()) for d in techtree.values()))
 
-        if ftt or civ == "Generic":
+        if ftt or civ == "Generic" or not civ_techs:
             max_m_atk = 3
             max_r_atk = 3
             max_i_arm = 3
