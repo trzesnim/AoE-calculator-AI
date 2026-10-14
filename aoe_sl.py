@@ -479,11 +479,11 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
     base_line_u = UNIT_LINE_BASE.get(norm)
     if base_line_u or is_elite:
          _, base_boost, _, base_restr, _ = fetch_wiki_unit(base_line_u or unit_name, is_elite=False)
-        if base_boost and base_boost not in boost_tech_str:
-            boost_tech_str = boost_tech_str + "\n" + base_boost
-        for tk, tv in base_restr.items():
-            if tk not in tech_civ_restrictions:
-                tech_civ_restrictions[tk] = tv
+         if base_boost and base_boost not in boost_tech_str:
+             boost_tech_str = boost_tech_str + "\n" + base_boost
+         for tk, tv in base_restr.items():
+             if tk not in tech_civ_restrictions:
+                 tech_civ_restrictions[tk] = tv
 
     if not content:
         st.error(f"Failed to fetch unit stats for **{unit_name}** from Fandom MediaWiki API.")
