@@ -592,16 +592,16 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
      clean_bonus_str = re.sub(r"\{\{tt\|([^|]+)\|.*?\}\}", r"\g<1>", str(bonus_str))
      for b_line in re.split(r"[\r\n]+|<br\s*/?>", clean_bonus_str, flags=re.I):
          m_b = re.search(r"([+-]?\d+(?:\s*,\s*[+-]?\d+)?)\s*(?:\([^)]*\))?\s*vs\.?\s*.*?2class\|([^}|]+)", b_line, re.I)
-             if m_b:
-                 nums, cls = m_b.group(1), m_b.group(2)
-                 parts = [p.strip() for p in nums.split(",")]
-                 val = parts[1] if (is_elite and len(parts) > 1) else parts[0]
-                 try:
-                     norm_cls = normalize_class_name(cls)
-                     val_int = int(val)
-                     attack_bonus[norm_cls] = val_int
-                 except ValueError:
-                     pass
+         if m_b:
+         nums, cls = m_b.group(1), m_b.group(2)
+         parts = [p.strip() for p in nums.split(",")]
+         val = parts[1] if (is_elite and len(parts) > 1) else parts[0]
+         try:
+             norm_cls = normalize_class_name(cls)
+             val_int = int(val)
+             attack_bonus[norm_cls] = val_int
+         except ValueError:
+             pass
 
     if "skirmisher" in norm:
         attack_bonus["unshielded"] = 4 if is_elite else 3
