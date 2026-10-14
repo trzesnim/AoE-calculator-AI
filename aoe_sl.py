@@ -48,7 +48,30 @@ GLOBAL_TEAM_UNITS = {
 
 # FIX 3: SEPARATE_PAGE_ELITES
 SEPARATE_PAGE_ELITES = {
-    "skirmisher", "eagle warrior", "battle elephant", "steppe lancer", "elephant archer", "cannon galleon"
+    "skirmisher", "eagle warrior", "battle elephant", "steppe lancer",
+    "elephant archer", "cannon galleon", "fire lancer", "champi warrior", "genitour"
+}
+
+UNIT_LINE_BASE = {
+    "cavalier": "Knight", "paladin": "Knight", "savar": "Knight",
+    "long swordsman": "Man-at-Arms", "two-handed swordsman": "Man-at-Arms",
+    "champion": "Two-Handed Swordsman", "legionary": "Man-at-Arms",
+    "pikeman": "Spearman", "halberdier": "Pikeman",
+    "crossbowman": "Archer", "arbalester": "Crossbowman",
+    "light cavalry": "Scout Cavalry", "hussar": "Light Cavalry", "winged hussar": "Light Cavalry",
+    "heavy cavalry archer": "Cavalry Archer",
+    "heavy camel rider": "Camel Rider", "imperial camel rider": "Heavy Camel Rider",
+    "eagle warrior": "Eagle Scout",
+    "capped ram": "Battering Ram", "siege ram": "Capped Ram",
+    "onager": "Mangonel", "siege onager": "Onager",
+    "heavy scorpion": "Scorpion", "siege elephant": "Armored Elephant",
+    "war galley": "Galley", "galleon": "War Galley",
+    "fire ship": "Fire Galley", "fast fire ship": "Fire Ship",
+    "demolition ship": "Demolition Raft", "heavy demolition ship": "Demolition Ship",
+    "war hulk": "Hulk", "carrack": "War Hulk",
+    "champi runner": "Champi Scout", "champi warrior": "Champi Runner",
+    "heavy hei guang cavalry": "Hei Guang Cavalry",
+    "heavy mounted crossbowman": "Mounted Crossbowman",
 }
 
 # Synchronized UNITS without duplicate "Elite ..." entries (FIX 1: added Jaguar Warrior, Dismounted Konnik, Traction Trebuchet, Qizilbash Warrior)
@@ -206,6 +229,14 @@ def load_techtree_data() -> tuple[dict, set]:
 
     return techtree, global_known_units
 
+def normalize_civ_name(c: str) -> str:
+    s = re.sub(r"[^A-Za-z\s]", "", c).strip()
+    if s.lower() in ("maya", "mayans"):
+        return "Mayans"
+    if s.lower() in ("inca", "incas"):
+        return "Incas"
+    return s
+    
 def check_fandom_availability(wikitext: str, civ: str) -> bool:
     if not civ or civ.lower() == "generic":
         return True
@@ -216,7 +247,8 @@ def check_fandom_availability(wikitext: str, civ: str) -> bool:
         val = m_civ.group(1).split("<!--")[0].strip()
         if "all" in val.lower():
             return True
-        if re.search(r"\b" + re.escape(civ) + r"\b", val, re.I):
+        civ_pattern = "Maya|Mayans" if civ == "Mayans" else ("Inca|Incas" if civ == "Incas" else re.escape(civ))
+        if re.search(r"\b(?:" + civ_pattern + r")\b", val, re.I):
             return True
         if any(c in val for c in ["{{2icons|", "[[", "Bengalis", "Britons", "Franks", "Aztecs", "Tupi", "Dravidians", "Gurjaras", "Cumans"]):
             return False
@@ -227,7 +259,8 @@ def check_fandom_availability(wikitext: str, civ: str) -> bool:
         val = m_avail.group(1)
         if "all" in val.lower():
             return True
-        if re.search(r"\b" + re.escape(civ) + r"\b", val, re.I):
+        civ_pattern = "Maya|Mayans" if civ == "Mayans" else ("Inca|Incas" if civ == "Incas" else re.escape(civ))
+        if re.search(r"\b(?:" + civ_pattern + r")\b", val, re.I):
             return True
         return False
 
@@ -308,7 +341,8 @@ def normalize_class_name(cls_name: str) -> str:
         "castles": "castles",
         "siege weapons": "siege weapon",
         "suicide units": "suicide unit",
-        "eagle warriors": "eagle warrior",
+        "eagle warriors": "shock infantry",
+        "eagle warrior": "shock infantry",
     }
     return mapping.get(c, c)
 
@@ -410,7 +444,7 @@ def fetch_wiki_unit(unit_name: str, is_elite: bool = False):
             if not techs:
                 techs = re.findall(r"\[\[(?:[^|\]]+\|)?([^\]]+)\]\]", before_only)
             for t in techs:
-                tech_civ_restrictions[t.strip().lower()] = [c.strip() for c in civ_names]
+                tech_civ_restrictions[t.strip().lower()] = [normalize_civ_name(c) for c in civ_names if c.strip()]
 
     parsed_techs = {}
     tech_tokens = re.findall(r"\{\{2icons\|([^}|]+)\}\}", boost_tech_str)
@@ -433,7 +467,7 @@ def fetch_wiki_unit(unit_name: str, is_elite: bool = False):
                 parsed_c = re.findall(r"\{\{2icons\|([^}|]+)", c_val)
                 if not parsed_c:
                     parsed_c = re.findall(r"\[\[(?:[^|\]]+\|)?([A-Za-z]+)\]\]", c_val)
-                wiki_allowed_civs = [c.replace("Maya", "Mayans").strip() for c in parsed_c if c.strip() and "allies" not in c.lower()]
+                wiki_allowed_civs = [normalize_civ_name(c) for c in parsed_c if c.strip() and "allies" not in c.lower()]
 
     return content, boost_tech_str, parsed_techs, tech_civ_restrictions, wiki_allowed_civs
 
@@ -442,12 +476,21 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
     norm = unit_name.lower()
     content, boost_tech_str, parsed_techs, tech_civ_restrictions, wiki_allowed_civs = fetch_wiki_unit(unit_name, is_elite=is_elite)
 
+    base_line_u = UNIT_LINE_BASE.get(norm)
+    if base_line_u or is_elite:
+         _, base_boost, _, base_restr, _ = fetch_wiki_unit(base_line_u or unit_name, is_elite=False)
+        if base_boost and base_boost not in boost_tech_str:
+            boost_tech_str = boost_tech_str + "\n" + base_boost
+        for tk, tv in base_restr.items():
+            if tk not in tech_civ_restrictions:
+                tech_civ_restrictions[tk] = tv
+
     if not content:
         st.error(f"Failed to fetch unit stats for **{unit_name}** from Fandom MediaWiki API.")
         return Unit(unit_name, 50, rof=2.0, boost_tech=boost_tech_str, elite=is_elite)
 
     ibox = extract_template(content, "Infobox AoE2 unit") or extract_template(content, "Infobox")
-    if "trebuchet" in norm and "PAttack" not in ibox and content.count("Infobox AoE2 unit") > 1:
+    if (("trebuchet" in norm and "PAttack" not in ibox) or "dismounted konnik" in norm) and content.count("Infobox AoE2 unit") > 1:
         ibox = extract_template(content[content.find("Infobox AoE2 unit") + 10:], "Infobox AoE2 unit")
 
     # BUG 3: Multiline-aware field extraction
@@ -546,8 +589,9 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
     bonus_str = data.get("AttackBonus", "")
     attack_bonus = {}
     if bonus_str:
-        for b_line in re.split(r"[\r\n]+|<br\s*/?>", str(bonus_str), flags=re.I):
-            m_b = re.search(r"([+-]?\d+(?:\s*,\s*[+-]?\d+)?)\s*(?:\([^)]*\))?\s*(?:vs\.?\s*)?.*?2class\|([^}|]+)", b_line, re.I)
+     clean_bonus_str = re.sub(r"\{\{tt\|([^|]+)\|.*?\}\}", r"\g<1>", str(bonus_str))
+     for b_line in re.split(r"[\r\n]+|<br\s*/?>", clean_bonus_str, flags=re.I):
+         m_b = re.search(r"([+-]?\d+(?:\s*,\s*[+-]?\d+)?)\s*(?:\([^)]*\))?\s*vs\.?\s*.*?2class\|([^}|]+)", b_line, re.I)
             if m_b:
                 nums, cls = m_b.group(1), m_b.group(2)
                 parts = [p.strip() for p in nums.split(",")]
@@ -640,7 +684,7 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
         hp = int(hp * 1.25)
     elif civ == "Saracens" and not is_unique_unit and any(c in norm_classes for c in ["camel"]):
         hp += 10
-    if up.get("sipahi") and "cavalry archer" in u.name.lower():
+    if up.get("sipahi"):
         hp += 20
     if up.get("el_dorado") and "eagle" in u.name.lower():
         hp += 40
@@ -660,9 +704,9 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
         rof *= 0.80
     elif civ == "Byzantines" and "fire" in u.name.lower():
         rof *= 0.80
-    elif up.get("stirrups") and any(c in norm_classes for c in ["cavalry"]):
+    if up.get("stirrups") and any(c in norm_classes for c in ["cavalry"]):
         rof *= 0.75
-    elif up.get("kataparuto") and "trebuchet" in u.name.lower():
+    if up.get("kataparuto") and "trebuchet" in u.name.lower():
         rof *= 0.75
 
     # FIX 4: Skirmisher / Genitour & Melee Ratha Thumb Ring does NOT increase ROF
@@ -689,7 +733,7 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
         p_atk += up.get("r_atk_val", 0)
         if up.get("chemistry"):
             p_atk += 1
-        if up.get("recurve_bow") and "cavalry archer" in u.name.lower():
+        if up.get("recurve_bow"):
             p_atk += 1
         if up.get("bogsveigar") and any(c in norm_classes for c in ["archer", "ship"]):
             p_atk += 1
@@ -759,7 +803,7 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
         p_arm += 1
     if up.get("ironclad") and "siege" in str(u.armor_class).lower():
         m_arm += 4
-    if up.get("hauberk") and "knight" in u.name.lower():
+    if up.get("hauberk"):
         m_arm += 1
         p_arm += 2
 
