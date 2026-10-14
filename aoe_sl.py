@@ -411,6 +411,8 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
         return Unit(unit_name, 50, rof=2.0, boost_tech=boost_tech_str, elite=is_elite)
 
     ibox = extract_template(content, "Infobox AoE2 unit") or extract_template(content, "Infobox")
+    if "trebuchet" in norm and "PAttack" not in ibox and content.count("Infobox AoE2 unit") > 1:
+        ibox = extract_template(content[content.find("Infobox AoE2 unit") + 10:], "Infobox AoE2 unit")
 
     # BUG 3: Multiline-aware field extraction
     data = {}
@@ -672,8 +674,6 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
     if up.get("gambesons") and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["infantry"]):
         p_arm += 1
     if up.get("careening") and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["ship"]):
-        p_arm += 1
-    if up.get("dry_dock") and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["ship"]):
         p_arm += 1
     if up.get("carracks") and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["ship"]):
         m_arm += 1
@@ -1198,7 +1198,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                     tier = st.selectbox(
                         "Melee Attack",
                         opts,
-                        index=len(opts) - 1,
+                        index=0,
                         format_func=lambda x: MELEE_ATK_NAMES[x],
                         key=f"m_atk_{side_idx}"
                     )
@@ -1211,7 +1211,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                     tier = st.selectbox(
                         "Ranged Attack",
                         opts,
-                        index=len(opts) - 1,
+                        index=0,
                         format_func=lambda x: RANGED_ATK_NAMES[x],
                         key=f"r_atk_{side_idx}"
                     )
@@ -1224,7 +1224,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                     tier = st.selectbox(
                         "Infantry Armor",
                         opts,
-                        index=len(opts) - 1,
+                        index=0,
                         format_func=lambda x: INF_ARM_NAMES[x],
                         key=f"i_arm_{side_idx}"
                     )
@@ -1234,7 +1234,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                     tier = st.selectbox(
                         "Cavalry Armor",
                         opts,
-                        index=len(opts) - 1,
+                        index=0,
                         format_func=lambda x: CAV_ARM_NAMES[x],
                         key=f"c_arm_{side_idx}"
                     )
@@ -1244,7 +1244,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                     tier = st.selectbox(
                         "Archer Armor",
                         opts,
-                        index=len(opts) - 1,
+                        index=0,
                         format_func=lambda x: ARC_ARM_NAMES[x],
                         key=f"a_arm_{side_idx}"
                     )
