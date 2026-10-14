@@ -1160,7 +1160,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         # FIX 1 & FIX 2: Filter selectable_units dynamically
         if civ != "Generic" and not ftt:
             selectable_units = []
-            if civ in techtree
+            if civ in techtree:
                 civ_units_set = techtree[civ].get("units", set())
                 for u in sorted(UNITS):
                     u_lower = u.lower()
