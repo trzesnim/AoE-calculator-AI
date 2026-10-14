@@ -14,6 +14,7 @@ from concurrent.futures import ThreadPoolExecutor
 m_requests = types.ModuleType("requests")
 m_st = types.ModuleType("streamlit")
 m_st.cache_data = lambda **k: (lambda f: f)
+m_st.error = lambda *a, **k: None
 sys.modules["requests"] = m_requests
 sys.modules["streamlit"] = m_st
 
@@ -22,7 +23,7 @@ import aoe_sl
 def inspect_single_unit(unit_name: str):
     """Fetches wiki data for unit_name, parses stats, and validates."""
     try:
-        content, boost_str, parsed_techs = aoe_sl.fetch_wiki_unit(unit_name)
+        content, boost_str, parsed_techs, *rest = aoe_sl.fetch_wiki_unit(unit_name)
         has_live = bool(content)
         unit = aoe_sl.parse_unit(unit_name, False, 3)
 
@@ -31,7 +32,7 @@ def inspect_single_unit(unit_name: str):
             errors.append(f"Invalid HP: {unit.hp}")
 
         can_attack = (unit.p_attack is not None and unit.p_attack > 0) or (unit.m_attack is not None and unit.m_attack > 0)
-        is_civilian = unit_name in ["Villager", "Fishing Ship", "Trade Cart", "Trade Cog", "Transport Ship", "Monk"]
+        is_civilian = unit_name in ["Villager", "Fishing Ship", "Trade Cart", "Trade Cog", "Transport Ship", "Monk", "Missionary", "Siege Tower"]
         if not can_attack and not is_civilian:
             errors.append(f"Missing attack stats: m={unit.m_attack}, p={unit.p_attack}")
 

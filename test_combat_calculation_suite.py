@@ -38,6 +38,8 @@ import math
 m_requests = types.ModuleType("requests")
 m_st = types.ModuleType("streamlit")
 m_st.cache_data = lambda **k: (lambda f: f)
+m_st.error = lambda *a, **k: None
+m_st.info = lambda *a, **k: None
 sys.modules["requests"] = m_requests
 sys.modules["streamlit"] = m_st
 

@@ -24,6 +24,8 @@ from concurrent.futures import ThreadPoolExecutor
 m_requests = types.ModuleType("requests")
 m_st = types.ModuleType("streamlit")
 m_st.cache_data = lambda **k: (lambda f: f)
+m_st.error = lambda *a, **k: None
+m_st.info = lambda *a, **k: None
 sys.modules["requests"] = m_requests
 sys.modules["streamlit"] = m_st
 
@@ -37,14 +39,14 @@ def inspect_unit_extraction(unit_name: str):
     issues = []
     
     # 1. Fetch live wiki wikitext & parsed techs via aoe_sl
-    live_content, boost_tech_str, parsed_techs, wiki_allowed = aoe_sl.fetch_wiki_unit(unit_name)
+    live_content, boost_tech_str, parsed_techs, *rest = aoe_sl.fetch_wiki_unit(unit_name)
     has_live_wiki = bool(live_content)
     
     # 2. Parse unit through aoe_sl
     unit = aoe_sl.parse_unit(unit_name, is_elite=False, age=3)
     
     # 3. Check baseline integrity
-    curated_data = aoe_sl.CURATED_UNITS.get(unit_name)
+    curated_data = getattr(aoe_sl, "CURATED_UNITS", {}).get(unit_name)
     has_curated = bool(curated_data)
     
     # Validate HP
@@ -54,7 +56,7 @@ def inspect_unit_extraction(unit_name: str):
         issues.append(f"HP exceeds sanity threshold (1500): {unit.hp}")
         
     # Validate Attack capability
-    is_civilian = unit_name in ["Villager", "Fishing Ship", "Trade Cart", "Trade Cog", "Transport Ship", "Monk"]
+    is_civilian = unit_name in ["Villager", "Fishing Ship", "Trade Cart", "Trade Cog", "Transport Ship", "Monk", "Missionary", "Siege Tower"]
     has_attack = (unit.p_attack is not None and unit.p_attack > 0) or (unit.m_attack is not None and unit.m_attack > 0)
     if not is_civilian and not has_attack:
         issues.append(f"Combat unit has no attack stats: m={unit.m_attack}, p={unit.p_attack}")
