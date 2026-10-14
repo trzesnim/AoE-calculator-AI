@@ -53,9 +53,9 @@ SEPARATE_PAGE_ELITES = {
 }
 
 UNIT_LINE_BASE = {
-    "cavalier": "Knight", "paladin": "Knight", "savar": "Knight",
-    "man-at-arms": "Militia", "long swordsman": "Man-at-Arms", "two-handed swordsman": "Man-at-Arms",
-    "champion": "Two-Handed Swordsman", "legionary": "Man-at-Arms",
+    "cavalier": "Knight", "paladin": "Cavalier", "savar": "Cavalier",
+    "man-at-arms": "Militia", "long swordsman": "Man-at-Arms", "two-handed swordsman": "Long Swordsman",
+    "champion": "Two-Handed Swordsman", "legionary": "Long Swordsman",
     "pikeman": "Spearman", "halberdier": "Pikeman",
     "crossbowman": "Archer", "arbalester": "Crossbowman",
     "light cavalry": "Scout Cavalry", "hussar": "Light Cavalry", "winged hussar": "Light Cavalry",
@@ -430,10 +430,11 @@ def fetch_wiki_unit(unit_name: str, is_elite: bool = False):
     # Extract raw substring of Boosts|Technologies
     pattern_boost = r"Boosts\|Technologies(.+?)(?:\{\{Boosts\||==\s*Civilization|\{\{Availability)"
     m_boost = re.search(pattern_boost, content, re.DOTALL)
-    boost_tech_str = m_boost.group(1).strip() if m_boost else ""
+    # Extract exact Boosts|Technologies template first so Changelog/Trivia is never swallowed
+    boost_tech_str = extract_template(content, "Boosts|Technologies")
     if not boost_tech_str:
-        b_fallback = extract_template(content, "Boosts|Technologies") or extract_template(content, "Boosts")
-        boost_tech_str = b_fallback
+        m_boost = re.search(r"Boosts\|Technologies(.+?)(?:\{\{Boosts\||==|\{\{Availability)", content, re.DOTALL)
+        boost_tech_str = m_boost.group(1).strip() if m_boost else extract_template(content, "Boosts")
 
     # BUG 4: Split by BOTH newlines and <br> tags
     tech_civ_restrictions = {}
@@ -441,9 +442,11 @@ def fetch_wiki_unit(unit_name: str, is_elite: bool = False):
         m_only = re.search(r"\(([^)]*?)\s+only\)", segment, re.I)
         if m_only:
             civs_part = m_only.group(1)
-            civ_names = re.findall(r"\[\[([^|\]]+)(?:\|[^\]]+)?\]\]", civs_part)
+            civ_names = re.findall(r"\{\{2icons\|([^}|]+)", civs_part)
             if not civ_names:
-                civ_names = [c.strip() for c in re.split(r"[,/]", civs_part) if c.strip()]
+                civ_names = re.findall(r"\[\[([^|\]]+)(?:\|[^\]]+)?\]\]", civs_part)
+            if not civ_names:
+                civ_names = [c.strip() for c in re.split(r"[,/]", civs_part) if c.strip() and not any(ch in c for ch in "+-%0123456789")]
             before_only = segment[:m_only.start()]
             techs = re.findall(r"\{\{2icons\|([^}|]+)", before_only)
             if not techs:
@@ -726,6 +729,8 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
         rof *= 0.75
     if up.get("kataparuto") and "trebuchet" in u.name.lower():
         rof *= 0.75
+    if up.get("caciques") and "infantry" in norm_classes:
+      rof *= 0.80
 
     # FIX 4: Skirmisher / Genitour & Melee Ratha Thumb Ring does NOT increase ROF
     if up.get("thumb_ring"):
@@ -911,6 +916,10 @@ def format_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -
     # FIX 8: Logistica
     if up.get("logistica") and "cataphract" in u.name.lower():
         special.append("Logistica (+6 vs Infantry & Trample)")
+    if up.get("curare"):
+        special.append("Curare (+2 Poison Dmg)")
+    if up.get("caciques") and "infantry" in [normalize_class_name(ac) for ac in u.armor_class]:
+        special.append("Caciques (+20% Faster Attack)")
     if up.get("kataparuto"):
         special.append("Kataparuto (33% Faster Attack & 4x Pack Speed)")
     if up.get("warwolf"):
@@ -1015,6 +1024,8 @@ def calculate_kill_trajectory(attacker: Unit, defender: Unit, civ_att: str, civ_
         elif "kipchak" in attacker.name.lower():
             extra = 3 if getattr(attacker, "elite", False) else 2
             dmg += extra * max(1, max(0, 3 - cur_target_p))
+        if up_att.get("curare"):
+          dmg += 2
 
         cur_hp -= dmg
         hp_after_each_hit.append(max(0, cur_hp))
@@ -1090,7 +1101,7 @@ def simulate_1v1(u1: Unit, u2: Unit, civ1: str, civ2: str, up1: dict, up2: dict)
         return f"A draw! Both {u1_label} and {u2_label} eliminate each other simultaneously in {traj1_hits} vs {traj2_hits} hits at {traj1_time:.2f}s."
 
     if traj1_time < traj2_time:
-        hits2 = min(traj2_hits, int(math.floor(traj1_time / eff2["rof"] + 1e-5)) + 1)
+        hits2 = min(max(0, traj2_hits - 1), int(math.floor(traj1_time / eff2["rof"] + 1e-5)) + 1)
         rem1 = hp1_history[hits2 - 1] if hits2 > 0 else eff1["hp"]
         max_hp1 = eff1["hp"]
         dealt2 = max_hp1 - rem1
@@ -1106,7 +1117,7 @@ def simulate_1v1(u1: Unit, u2: Unit, civ1: str, civ2: str, up1: dict, up2: dict)
             f"- The losing unit ({u2_label}) would have killed the winner in {traj2_hits} hits and {traj2_time:.2f} seconds.{cost_line}"
         )
     else:
-        hits1 = min(traj1_hits, int(math.floor(traj2_time / eff1["rof"] + 1e-5)) + 1)
+        hits1 = min(max(0, traj1_hits - 1), int(math.floor(traj2_time / eff1["rof"] + 1e-5)) + 1)
         rem2 = hp2_history[hits1 - 1] if hits1 > 0 else eff2["hp"]
         max_hp2 = eff2["hp"]
         dealt1 = max_hp2 - rem2
@@ -1259,7 +1270,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         boost = base_unit.boost_tech.lower()
         tech_restrictions = getattr(base_unit, "tech_civ_restrictions", {})
 
-        civ_techs = techtree.get(civ, {}).get("techs", set()) if (civ != "Generic" and not ftt) else set()
+        civ_techs = techtree.get(civ, {}).get("techs", set()) if civ != "Generic" else set()
         all_known_techs = set().union(*(d.get("techs", set()) for d in techtree.values()))
 
         if ftt or civ == "Generic" or not civ_techs:
