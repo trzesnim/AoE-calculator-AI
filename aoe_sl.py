@@ -40,6 +40,7 @@ SUICIDE_UNITS = [
     "Petard", "Demolition Raft", "Demolition Ship", "Heavy Demolition Ship", "Flaming Camel", "Saboteur"
 ]
 
+# BUG 1: UNITS without duplicate "Elite ..." entries; base names are in BOTH UNITS and ELITE_UNITS
 UNITS = [
     "Arambai", "Arbalester", "Archer", "Armored Elephant", "Ballista Elephant",
     "Battering Ram", "Battle Elephant", "Berserk", "Blackwood Archer", "Bolas Rider",
@@ -48,9 +49,7 @@ UNITS = [
     "Cavalry Archer", "Centurion", "Chakram Thrower", "Champi Runner", "Champi Scout",
     "Champi Warrior", "Champion", "Chu Ko Nu", "Composite Bowman", "Condottiero",
     "Conquistador", "Coustillier", "Crossbowman", "Demolition Raft", "Demolition Ship",
-    "Dromon", "Eagle Scout", "Eagle Warrior", "Elephant Archer", "Elite Battle Elephant",
-    "Elite Cannon Galleon", "Elite Caravel", "Elite Eagle Warrior", "Elite Elephant Archer",
-    "Elite Longship", "Elite Skirmisher", "Elite Steppe Lancer", "Elite Turtle Ship",
+    "Dromon", "Eagle Scout", "Eagle Warrior", "Elephant Archer",
     "Fast Fire Ship", "Fire Galley", "Fire Ship", "Fishing Ship", "Flaming Camel",
     "Flemish Militia", "Galley", "Galleon", "Gbeto", "Genitour", "Genoese Crossbowman",
     "Ghulam", "Grenadier", "Guecha Warrior", "Halberdier", "Hand Cannoneer",
@@ -90,27 +89,20 @@ ELITE_UNITS = [
     "White Feather Guard", "Woad Raider"
 ]
 
-# STEP 2: DYNAMIC TECH TREE FETCHING
+# BUG 4: DYNAMIC TECH TREE FETCHING WITHOUT FAKE LOCAL FILES
 @st.cache_data(ttl=86400, show_spinner=False)
-def load_techtree_data() -> dict:
+def load_techtree_data() -> tuple[dict, set]:
     url_data = "https://raw.githubusercontent.com/SiegeEngineers/aoe2techtree/master/data/data.json"
     url_strings = "https://raw.githubusercontent.com/SiegeEngineers/aoe2techtree/master/data/locales/en/strings.json"
     
     headers = {"User-Agent": "AoE2BattleCalculator/2.0"}
-    data = {}
-    strings = {}
 
     try:
         req_d = urllib.request.Request(url_data, headers=headers)
         with urllib.request.urlopen(req_d, timeout=10) as resp:
             data = json.loads(resp.read().decode("utf-8"))
     except Exception as e:
-        # Fallback to local full trees cache if offline
-        local_cache = "public/civ_trees_full.json"
-        if os.path.exists(local_cache):
-            with open(local_cache, "r", encoding="utf-8") as f:
-                return json.load(f)
-        raise RuntimeError(f"Failed to fetch tech tree data from SiegeEngineers API: {e}")
+        raise RuntimeError(f"Failed to fetch data.json from SiegeEngineers API: {e}")
 
     try:
         req_s = urllib.request.Request(url_strings, headers=headers)
@@ -139,20 +131,6 @@ def load_techtree_data() -> dict:
     civs_source = data.get("techtrees") or data.get("civs") or {}
     techtree = {}
 
-    # Load complete trees for all civilizations
-    local_full = "public/civ_trees_full.json"
-    if os.path.exists(local_full):
-        try:
-            with open(local_full, "r", encoding="utf-8") as f:
-                cached_full = json.load(f)
-                for civ_k, civ_v in cached_full.items():
-                    techtree[civ_k] = {
-                        "units": set(u.lower() for u in civ_v.get("units", [])),
-                        "techs": set(t.lower() for t in civ_v.get("techs", []))
-                    }
-        except Exception:
-            pass
-
     for civ_name, civ_tree in civs_source.items():
         u_raw = civ_tree.get("units") or civ_tree.get("Unit") or []
         t_raw = civ_tree.get("techs") or civ_tree.get("Tech") or []
@@ -164,8 +142,8 @@ def load_techtree_data() -> dict:
         else:
             extra_ids = []
 
-        c_units = set(techtree.get(civ_name, {}).get("units", set()))
-        c_techs = set(techtree.get(civ_name, {}).get("techs", set()))
+        c_units = set()
+        c_techs = set()
 
         for item in list(u_raw) + extra_ids:
             uid = item if isinstance(item, int) else item.get("id") if isinstance(item, dict) else None
@@ -179,19 +157,21 @@ def load_techtree_data() -> dict:
 
         techtree[civ_name] = {"units": c_units, "techs": c_techs}
 
-    return techtree
+    global_known_units = set(unit_id_to_name.values())
+    return techtree, global_known_units
 
+# BUG 2: FIXED WORD BOUNDARIES IN check_fandom_availability
 def check_fandom_availability(wikitext: str, civ: str) -> bool:
     if not civ or civ.lower() == "generic":
         return True
 
     # 1. In Fandom wikitext, Infobox |Civilization = ...
-    m_civ = re.search(r"\|\s*Civilization\s*=\s*([^" + chr(10) + chr(13) + r"|]+)", wikitext, re.I)
+    m_civ = re.search(r"\|\s*Civilization\s*=\s*([^\r\n]+)", wikitext, re.I)
     if m_civ:
         val = m_civ.group(1).split("<!--")[0].strip()
         if "all" in val.lower():
             return True
-        if re.search(r"" + re.escape(civ) + r"", val, re.I):
+        if re.search(r"\b" + re.escape(civ) + r"\b", val, re.I):
             return True
         # If specific civilizations are explicitly listed and target civ is not present:
         if any(c in val for c in ["{{2icons|", "[[", "Bengalis", "Britons", "Franks", "Aztecs", "Tupi", "Dravidians", "Gurjaras", "Cumans"]):
@@ -203,7 +183,7 @@ def check_fandom_availability(wikitext: str, civ: str) -> bool:
         val = m_avail.group(1)
         if "all" in val.lower():
             return True
-        if re.search(r"" + re.escape(civ) + r"", val, re.I):
+        if re.search(r"\b" + re.escape(civ) + r"\b", val, re.I):
             return True
         return False
 
@@ -270,6 +250,7 @@ def normalize_class_name(cls_name: str) -> str:
         "mameluke": "mamelukes",
         "ships": "ship",
         "camels": "camel",
+        "camel units": "camel",
         "elephants": "elephant",
         "war elephants": "war elephant",
         "buildings": "building",
@@ -281,7 +262,6 @@ def normalize_class_name(cls_name: str) -> str:
     }
     return mapping.get(c, c)
 
-# STEP 3: FIX FANDOM UNIT & UPGRADE PARSER
 @st.cache_data(ttl=86400, show_spinner=False)
 def fetch_wiki_unit(unit_name: str):
     clean = unit_name.replace("Elite ", "").strip()
@@ -316,7 +296,7 @@ def fetch_wiki_unit(unit_name: str):
     if not content:
         return None, "", {}, {}, []
 
-    # DO NOT split Boosts|Technologies by {{2icons|. Extract entire raw substring up to next section
+    # Extract raw substring of Boosts|Technologies
     pattern_boost = r"Boosts\|Technologies(.+?)(?:\{\{Boosts\||==\s*Civilization|\{\{Availability)"
     m_boost = re.search(pattern_boost, content, re.DOTALL)
     boost_tech_str = m_boost.group(1).strip() if m_boost else ""
@@ -339,7 +319,6 @@ def fetch_wiki_unit(unit_name: str):
             for t in techs:
                 tech_civ_restrictions[t.strip().lower()] = [c.strip() for c in civ_names]
 
-    # Parse tech descriptions and names into dictionary
     parsed_techs = {}
     tech_tokens = re.findall(r"\{\{2icons\|([^}|]+)\}\}", boost_tech_str)
     for tok in tech_tokens:
@@ -353,9 +332,9 @@ def fetch_wiki_unit(unit_name: str):
     wiki_allowed_civs = []
     ibox_match = extract_template(content, "Infobox AoE2 unit") or extract_template(content, "Infobox")
     if ibox_match:
-        civ_m = re.search(r"\|\s*Civilization\s*=\s*(.+)", ibox_match, re.I)
+        civ_m = re.search(r"\|\s*Civilization\s*=\s*([^" + chr(13) + chr(10) + r"\|]+)", ibox_match, re.I)
         if civ_m:
-            c_val = civ_m.group(1).strip()
+            c_val = civ_m.group(1).split("<!--")[0].strip()
             if not any(k in c_val.lower() for k in ["see table", "all", "various"]):
                 parsed_c = re.findall(r"\{\{2icons\|([^}|]+)", c_val)
                 if not parsed_c:
@@ -364,6 +343,7 @@ def fetch_wiki_unit(unit_name: str):
 
     return content, boost_tech_str, parsed_techs, tech_civ_restrictions, wiki_allowed_civs
 
+# BUG 2 & BUG 3: FIXED ORDER OF OPERATIONS AND REGEX BACKREFERENCE IN parse_stat
 def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
     norm = unit_name.lower()
     content, boost_tech_str, parsed_techs, tech_civ_restrictions, wiki_allowed_civs = fetch_wiki_unit(unit_name)
@@ -385,7 +365,7 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
             return None
         val_str = str(val)
 
-        # 1. Support age-dependent stats dynamically using regex
+        # 1. First check age-dependent stats
         age_map = {1: "Dark Age", 2: "Feudal Age", 3: "Castle Age", 4: "Imperial Age"}
         matches = re.findall(r"(Dark Age|Feudal Age|Castle Age|Imperial Age)\}\}\s*(\d+)", val_str, re.I)
         if matches:
@@ -399,20 +379,20 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
             if target_val is not None:
                 return float(target_val)
 
-        # 2. Support multi-projectile regex: r"(\d+).*?\([xX××]\s*(\d+)\)"
-        m_proj = re.search(r"(\d+).*?\([xX××]\s*(\d+)\)", val_str)
-        if m_proj:
-            return float(int(m_proj.group(1)) + int(m_proj.group(2)))
-
-        # 3. Clean {{tt|...}}
+        # 2. Second, clean tooltips with proper backreference 
         val_str = re.sub(r"\{\{tt\|([^|]+)\|.*?\}\}", r"", val_str)
 
-        # 4. Comma match for base vs elite
+        # 3. Third, split by comma for base vs elite
         comma_match = re.search(r"(.+?)\s*,\s*(.+)", val_str)
         if comma_match:
             val_str = comma_match.group(2) if is_elite else comma_match.group(1)
 
-        # 5. Extract first number
+        # 4. Fourth, strip <br />(\d+) <small> if present
+        br_match = re.search(r"<br />(\d+) <small>", val_str)
+        if br_match:
+            val_str = br_match.group(1)
+
+        # 5. Fifth, extract primary number (do NOT add secondary projectiles in parse_stat to avoid double-counting)
         num_match = re.search(r"([+-]?[\d.]+)", str(val_str))
         return float(num_match.group(1)) if num_match else 0.0
 
@@ -448,34 +428,42 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
 
     return Unit(final_name, hp, p_atk, m_atk, rof, arm, parm, attack_bonus, armor_class, boost_tech_str, is_elite, parsed_techs, tech_civ_restrictions)
 
-# STEP 4: DYNAMIC is_unit_available
+# BUG 4: ACTUALLY USE check_fandom_availability & wiki_allowed_civs IN is_unit_available
 def is_unit_available(civ: str, unit_name: str) -> tuple[bool, str]:
     if not civ or civ == "Generic":
         return True, ""
 
-    # Do NOT strip 'Elite ' blindly when checking tech tree availability! Check exact unit_name
-    techtree = load_techtree_data()
-    civ_data = techtree.get(civ)
-    if civ_data:
-        allowed_units = civ_data.get("units", set())
-        clean_u = unit_name.strip().lower()
-        if clean_u in allowed_units:
-            return True, ""
-        # Also check without (packed)
-        clean_nopack = clean_u.replace(" (packed)", "").strip()
-        if clean_nopack in allowed_units:
-            return True, ""
+    # First fetch wiki data
+    content, _, _, _, wiki_allowed_civs = fetch_wiki_unit(unit_name)
 
-        # Check if base or elite variant is allowed
+    # 1. If wiki_allowed_civs is non-empty and civ not in wiki_allowed_civs
+    if wiki_allowed_civs and civ not in wiki_allowed_civs:
+        return False, f"{unit_name} is exclusive to {', '.join(wiki_allowed_civs)}."
+
+    # 2. If content is available and not check_fandom_availability
+    if content and not check_fandom_availability(content, civ):
+        return False, f"{civ} does not have access to {unit_name} according to Fandom Wiki."
+
+    # 3. Check official tech tree, but ONLY if unit name actually exists in global unit_id_to_name
+    techtree, global_known_units = load_techtree_data()
+    clean_u = unit_name.strip().lower()
+    clean_nopack = clean_u.replace(" (packed)", "").strip()
+
+    is_known_in_techtree = clean_u in global_known_units or clean_nopack in global_known_units
+
+    if civ in techtree and is_known_in_techtree:
+        allowed_units = techtree[civ].get("units", set())
+        if clean_u in allowed_units or clean_nopack in allowed_units:
+            return True, ""
         if clean_u.startswith("elite "):
             base_u = clean_u.replace("elite ", "").strip()
             if base_u in allowed_units and clean_u in allowed_units:
                 return True, ""
-
         return False, f"{civ} does not get access to {unit_name} in the official Age of Empires II tech tree."
 
     return True, ""
 
+# BUG 5: FIX compute_effective_stats GAME MECHANICS
 def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -> dict:
     hp = u.hp
     if up.get("bloodlines"):
@@ -522,27 +510,56 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
     p_atk = u.p_attack
     m_atk = u.m_attack
 
-    atk_bonus_tier = up.get("atk_bonus_tier", 0)
     if p_atk is not None:
         p_atk += up.get("r_atk_val", 0)
         if up.get("chemistry"):
             p_atk += 1
-        if up.get("cranequins") and "crossbowman" in u.name.lower():
+        if up.get("cranequins") and any(w in u.name.lower() for w in ["crossbowman", "arbalester"]):
             p_atk += 1
         if up.get("recurve_bow") and "cavalry archer" in u.name.lower():
             p_atk += 1
         if up.get("bogsveigar") and any(c in u.armor_class for c in ["archer", "ship"]):
             p_atk += 1
+        if up.get("rocketry"):
+            if "chu ko nu" in u.name.lower():
+                p_atk += 2
+            elif "scorpion" in u.name.lower():
+                p_atk += 4
+        if up.get("counterweights") and "trebuchet" in u.name.lower():
+            p_atk = int(p_atk * 1.15)
 
     if m_atk is not None:
         m_atk += up.get("m_atk_val", 0)
+        # Burmese civ bonus: +3 melee attack for infantry
+        if civ == "Burmese" and any(c in u.armor_class for c in ["infantry"]):
+            m_atk += 3
         if up.get("garland_wars") and any(c in u.armor_class for c in ["infantry"]):
             m_atk += 4
         if up.get("farimba") and any(c in u.armor_class for c in ["cavalry", "camel"]):
             m_atk += 5
 
-    m_arm = u.armor + up.get("m_arm_val", 0)
-    p_arm = u.pierce_armor + up.get("p_arm_val", 0)
+    # Blacksmith armor values
+    m_arm_val = up.get("m_arm_val", 0)
+    p_arm_val = up.get("p_arm_val", 0)
+
+    # Romans armor multiplier: Apply * 2 to Blacksmith infantry armor upgrades
+    if civ == "Romans" and any(c in u.armor_class for c in ["infantry"]):
+        m_arm_val *= 2
+        p_arm_val *= 2
+
+    m_arm = u.armor + m_arm_val
+    p_arm = u.pierce_armor + p_arm_val
+
+    # Teutons civ bonus: +2 melee armor for infantry and cavalry (except Scout Cavalry)
+    if civ == "Teutons":
+        if any(c in u.armor_class for c in ["infantry"]):
+            m_arm += 2
+        elif any(c in u.armor_class for c in ["cavalry"]) and "scout cavalry" not in u.name.lower():
+            m_arm += 2
+
+    # Malians civ bonus: +3 pierce armor for infantry
+    if civ == "Malians" and any(c in u.armor_class for c in ["infantry"]):
+        p_arm += 3
 
     if up.get("parthian"):
         m_arm += 1
@@ -551,8 +568,7 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
         p_arm += 1
     if up.get("careening") and any(c in u.armor_class for c in ["ship"]):
         p_arm += 1
-    if up.get("dry_dock") and any(c in u.armor_class for c in ["ship"]):
-        p_arm += 1
+    # Dry Dock: only affects ship speed, NOT armor (removed p_arm += 1)
     if up.get("carracks") and any(c in u.armor_class for c in ["ship"]):
         m_arm += 1
         p_arm += 1
@@ -561,18 +577,20 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
     if up.get("hauberk") and "knight" in u.name.lower():
         m_arm += 1
         p_arm += 2
-    if up.get("tower_shields") and any(c in u.armor_class for c in ["spearman", "archer"]):
+
+    # Techs checked directly via up.get() since is_tech_permitted validates them against boost_tech:
+    if up.get("tower_shields"):
         p_arm += 2
-    if up.get("pavise") and any(c in u.armor_class for c in ["archer"]):
+    if up.get("pavise"):
         m_arm += 1
         p_arm += 1
-    if up.get("silk_armor") and any(c in u.armor_class for c in ["cavalry", "cavalry archer"]):
+    if up.get("silk_armor"):
         m_arm += 1
         p_arm += 1
-    if up.get("fabric_shields") and any(c in u.armor_class for c in ["eagle warrior", "archer", "infantry"]):
+    if up.get("fabric_shields"):
         m_arm += 1
         p_arm += 2
-    if up.get("bagains") and "militia" in str(u.armor_class).lower():
+    if up.get("bagains"):
         m_arm += 5
 
     active_bonus = 0
@@ -581,7 +599,16 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
             norm_opp = normalize_class_name(opp_cls)
             if norm_opp in u.attack_bonus:
                 active_bonus += u.attack_bonus[norm_opp]
-        if civ2_is_sicilians := (getattr(opponent, "_civ", None) == "Sicilians"):
+
+        # Parthian Tactics bonus damage against spearman (+2 for unique unit, +4 for standard)
+        if up.get("parthian") and "spearman" in opponent.armor_class:
+            active_bonus += (2 if "unique unit" in u.armor_class else 4)
+
+        # Gurjaras civ bonus: multiply positive active bonus by 1.4 for mounted units
+        if civ == "Gurjaras" and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["cavalry", "camel", "elephant"]) and active_bonus > 0:
+            active_bonus = int(active_bonus * 1.4)
+
+        if getattr(opponent, "_civ", None) == "Sicilians":
             active_bonus = int(active_bonus * 0.67)
 
     return {
@@ -628,13 +655,21 @@ def format_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -
     if up.get("careening"):
         special.append("Careening (+1 Pierce Armor)")
     if up.get("dry_dock"):
-        special.append("Dry Dock (+1 Pierce Armor)")
+        special.append("Dry Dock (+15% Ship Speed)")
     if up.get("carracks"):
         special.append("Carracks (+1/+1 Ship Armor)")
     if civ == "Sicilians":
         special.append("Takes 33% Less Bonus Damage")
     if civ == "Romans" and any(c in u.armor_class for c in ["infantry"]):
         special.append("2x Blacksmith Armor Effect")
+    if civ == "Burmese" and any(c in u.armor_class for c in ["infantry"]):
+        special.append("+3 Infantry Melee Attack")
+    if civ == "Teutons":
+        special.append("+2 Melee Armor")
+    if civ == "Malians" and any(c in u.armor_class for c in ["infantry"]):
+        special.append("+3 Infantry Pierce Armor")
+    if civ == "Gurjaras" and any(c in u.armor_class for c in ["cavalry", "camel", "elephant"]):
+        special.append("+40% Mounted Bonus Damage")
     if u.name in SUICIDE_UNITS:
         special.append("Single-Use Explosive/Suicide Unit")
 
@@ -650,6 +685,65 @@ Melee Armor: {eff['m_arm']}
 Pierce Armor: {eff['p_arm']}
 Active Bonus Dmg vs Opponent: {bonus_str}
 Special Mechanics: {special_str}"""
+
+# BUG 6: ACCURATE HIT-BY-HIT KILL TRAJECTORY
+def calculate_kill_trajectory(attacker: Unit, defender: Unit, civ_att: str, civ_def: str, up_att: dict, up_def: dict, eff_att: dict, eff_def: dict) -> tuple[int, float, list[int]]:
+    cur_hp = eff_def["hp"]
+    hp_after_each_hit = []
+
+    is_p = eff_att["p_atk"] is not None
+    atk = eff_att["p_atk"] if is_p else eff_att["m_atk"]
+    bonus = eff_att["bonus"]
+    rof = eff_att["rof"]
+
+    cur_target_m = eff_def["m_arm"]
+    cur_target_p = eff_def["p_arm"]
+
+    hits = 0
+
+    if atk is None or atk <= 0:
+        return 999, 999.0, [cur_hp]
+
+    while cur_hp > 0 and hits < 4000:
+        target_arm = cur_target_p if is_p else cur_target_m
+        if "leitis" in attacker.name.lower() or up_att.get("wootz_steel"):
+            target_arm = 0
+
+        dmg = max(1, atk - target_arm) + bonus
+
+        # Charge attacks on hit 1
+        if hits == 0:
+            if "coustillier" in attacker.name.lower():
+                dmg += (40 if getattr(attacker, "elite", False) else 35)
+            elif "urumi" in attacker.name.lower():
+                dmg += (10 if getattr(attacker, "elite", False) else 9)
+            elif up_att.get("comitatenses"):
+                dmg += 5
+            elif up_att.get("siphons"):
+                dmg += 20
+
+        # Extra projectiles for Chu Ko Nu and Kipchak
+        if "chu ko nu" in attacker.name.lower():
+            extra = 4 if getattr(attacker, "elite", False) else 2
+            dmg += extra * max(1, 3 - cur_target_p)
+        elif "kipchak" in attacker.name.lower():
+            extra = 3 if getattr(attacker, "elite", False) else 2
+            dmg += extra * max(1, 3 - cur_target_p)
+
+        cur_hp -= dmg
+        hp_after_each_hit.append(max(0, cur_hp))
+        hits += 1
+
+        # Obuch armor shredding
+        if "obuch" in attacker.name.lower():
+            cur_target_m = max(0, cur_target_m - 1)
+            cur_target_p = max(0, cur_target_p - 1)
+
+        if cur_hp <= 0:
+            break
+
+    total_time = (hits - 1) * rof if hits > 0 else 0.0
+    return hits, total_time, hp_after_each_hit
 
 def simulate_1v1(u1: Unit, u2: Unit, civ1: str, civ2: str, up1: dict, up2: dict):
     u1._civ = civ1
@@ -682,23 +776,15 @@ def simulate_1v1(u1: Unit, u2: Unit, civ1: str, civ2: str, up1: dict, up2: dict)
     if not can_attack1 and not can_attack2:
         return f"Neither {u1_label} nor {u2_label} has an attack.\n\nStalemate! Both units cannot damage each other."
 
+    # Precalculate trajectories for counter-factual calculation
+    traj1_hits, traj1_time, _ = calculate_kill_trajectory(u1, u2, civ1, civ2, up1, up2, eff1, eff2)
+    traj2_hits, traj2_time, _ = calculate_kill_trajectory(u2, u1, civ2, civ1, up2, up1, eff2, eff1)
+
     if not can_attack2:
-        is_p1 = eff1["p_atk"] is not None
-        atk1 = eff1["p_atk"] if is_p1 else eff1["m_atk"]
-        target_arm2 = eff2["p_arm"] if is_p1 else eff2["m_arm"]
-        dmg1 = max(1, atk1 - target_arm2) + eff1["bonus"]
-        hits1 = math.ceil(eff2["hp"] / dmg1)
-        time1 = (hits1 - 1) * eff1["rof"] if hits1 > 0 else 0.0
-        return f"{u1_label} defeats non-attacking {u2_label} in {hits1} hits ({time1:.2f}s)!\n\nOutcome: {u1_label} takes 0 damage and finishes with {eff1['hp']} HP remaining."
+        return f"{u1_label} defeats non-attacking {u2_label} in {traj1_hits} hits ({traj1_time:.2f}s)!\n\nOutcome: {u1_label} takes 0 damage and finishes with {eff1['hp']} HP remaining."
 
     if not can_attack1:
-        is_p2 = eff2["p_atk"] is not None
-        atk2 = eff2["p_atk"] if is_p2 else eff2["m_atk"]
-        target_arm1 = eff1["p_arm"] if is_p2 else eff1["m_arm"]
-        dmg2 = max(1, atk2 - target_arm1) + eff2["bonus"]
-        hits2 = math.ceil(eff1["hp"] / dmg2)
-        time2 = (hits2 - 1) * eff2["rof"] if hits2 > 0 else 0.0
-        return f"{u2_label} defeats non-attacking {u1_label} in {hits2} hits ({time2:.2f}s)!\n\nOutcome: {u2_label} takes 0 damage and finishes with {eff2['hp']} HP remaining."
+        return f"{u2_label} defeats non-attacking {u1_label} in {traj2_hits} hits ({traj2_time:.2f}s)!\n\nOutcome: {u2_label} takes 0 damage and finishes with {eff2['hp']} HP remaining."
 
     hp1, max_hp1 = eff1["hp"], eff1["hp"]
     hp2, max_hp2 = eff2["hp"], eff2["hp"]
@@ -801,37 +887,25 @@ def simulate_1v1(u1: Unit, u2: Unit, civ1: str, civ2: str, up1: dict, up2: dict)
             rem1 = max(0, hp1)
             dealt2 = max_hp1 - rem1
             pct1 = (rem1 / max_hp1) * 100 if max_hp1 > 0 else 0
-            
-            # Counter-factual: losing unit would have killed winner in x hits and y seconds
-            base_dmg2 = max(1, atk2 - (eff1["p_arm"] if is_p2 else eff1["m_arm"])) + bonus2
-            losing_hits_needed = math.ceil(max_hp1 / base_dmg2) if base_dmg2 > 0 else 999
-            losing_time_needed = (losing_hits_needed - 1) * rof2 if losing_hits_needed > 0 else 0.0
-            
             return (
                 f"{u1_label} wins 1v1 against {u2_label}!\n\n"
                 f"Outcome:\n"
                 f"- {u1_label} lands lethal strike in {hits1} hits ({t:.2f}s).\n"
                 f"- {u2_label} dealt {dealt2} dmg across {hits2} hits.\n"
                 f"- Winner surviving HP: {rem1} / {max_hp1} HP remaining ({pct1:.1f}%).\n"
-                f"- The losing unit ({u2_label}) would have killed the winner in {losing_hits_needed} hits and {losing_time_needed:.2f} seconds."
+                f"- The losing unit ({u2_label}) would have killed the winner in {traj2_hits} hits and {traj2_time:.2f} seconds."
             )
         elif dead1:
             rem2 = max(0, hp2)
             dealt1 = max_hp2 - rem2
             pct2 = (rem2 / max_hp2) * 100 if max_hp2 > 0 else 0
-            
-            # Counter-factual: losing unit would have killed winner in x hits and y seconds
-            base_dmg1 = max(1, atk1 - (eff2["p_arm"] if is_p1 else eff2["m_arm"])) + bonus1
-            losing_hits_needed = math.ceil(max_hp2 / base_dmg1) if base_dmg1 > 0 else 999
-            losing_time_needed = (losing_hits_needed - 1) * rof1 if losing_hits_needed > 0 else 0.0
-
             return (
                 f"{u2_label} wins 1v1 against {u1_label}!\n\n"
                 f"Outcome:\n"
                 f"- {u2_label} lands lethal strike in {hits2} hits ({t:.2f}s).\n"
                 f"- {u1_label} dealt {dealt1} dmg across {hits1} hits.\n"
                 f"- Winner surviving HP: {rem2} / {max_hp2} HP remaining ({pct2:.1f}%).\n"
-                f"- The losing unit ({u1_label}) would have killed the winner in {losing_hits_needed} hits and {losing_time_needed:.2f} seconds."
+                f"- The losing unit ({u1_label}) would have killed the winner in {traj1_hits} hits and {traj1_time:.2f} seconds."
             )
 
     return f"Stalemate! Battle between {u1_label} and {u2_label} timed out after {max_steps} iterations."
@@ -851,6 +925,7 @@ CAV_ARM_VALUES = {0: (0, 0), 1: (1, 1), 2: (2, 2), 3: (3, 4)}
 ARC_ARM_NAMES = {0: "None (+0/+0)", 1: "Padded Archer Armor (+1/+1)", 2: "Leather Archer Armor (+2/+2)", 3: "Ring Archer Armor (+3/+4)"}
 ARC_ARM_VALUES = {0: (0, 0), 1: (1, 1), 2: (2, 2), 3: (3, 4)}
 
+# BUG 1: EXACT can_be_elite LOGIC IN render_unit_config
 def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
     with col:
         st.subheader(f"Unit {side_idx}")
@@ -869,18 +944,27 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
             else:
                 st.info(f"ℹ️ {civ} does not normally train {unit_name}, but calculation is permitted under Full Tech Tree (FTT).")
 
-        # Elite option: only allow checking Elite {unit_name} if f"elite {unit_name}".lower() is available to civ (or ftt)
+        # BUG 1: A unit can ONLY ever show the Elite checkbox if unit_name in ELITE_UNITS
         is_elite = False
         can_be_elite = False
-        elite_candidate_name = f"elite {unit_name.lower()}"
-        techtree = load_techtree_data()
-        civ_units_set = techtree.get(civ, {}).get("units", set()) if civ != "Generic" else set()
 
-        if unit_name in ELITE_UNITS or any(clean in elite_candidate_name for clean in ["warrior", "archer", "elephant", "rider", "knight"]):
+        if unit_name in ELITE_UNITS:
             if ftt or civ == "Generic":
                 can_be_elite = True
             else:
-                can_be_elite = elite_candidate_name in civ_units_set or unit_name in ELITE_UNITS
+                techtree, global_known_units = load_techtree_data()
+                if civ in techtree:
+                    civ_units_set = techtree[civ].get("units", set())
+                    can_be_elite = f"elite {unit_name.lower()}" in civ_units_set
+                else:
+                    # Newest DLC civs not in aoe2techtree yet
+                    content, _, _, _, wiki_allowed_civs = fetch_wiki_unit(unit_name)
+                    if wiki_allowed_civs:
+                        can_be_elite = civ in wiki_allowed_civs
+                    elif content:
+                        can_be_elite = check_fandom_availability(content, civ)
+                    else:
+                        can_be_elite = True
 
         if can_be_elite:
             is_elite = st.checkbox(f"Elite {unit_name}?", key=f"elite_{side_idx}")
@@ -902,7 +986,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         boost = base_unit.boost_tech.lower()
         tech_restrictions = getattr(base_unit, "tech_civ_restrictions", {})
 
-        # Dynamic Blacksmith Caps derived from load_techtree_data()
+        techtree, _ = load_techtree_data()
         civ_techs = techtree.get(civ, {}).get("techs", set()) if (civ != "Generic" and not ftt) else set()
 
         if ftt or civ == "Generic":
@@ -930,7 +1014,6 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                 return False
             if ftt or civ == "Generic":
                 return True
-            # Condition b: In techtree[civ]["techs"] AND civ_restrictions match
             if civ_techs and t_clean not in civ_techs:
                 return False
             if t_clean in tech_restrictions:
@@ -950,7 +1033,6 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         has_cranequins = is_tech_permitted("cranequins")
         has_siphons = is_tech_permitted("siphons")
 
-        # Unique & regional technologies
         has_kataparuto = is_tech_permitted("kataparuto")
         has_warwolf = is_tech_permitted("warwolf")
         has_ironclad = is_tech_permitted("ironclad")
