@@ -313,6 +313,7 @@ def fetch_wiki_unit(unit_name: str):
                     if wt and "infobox" in wt.lower():
                         content = wt
                         break
+                break
             except urllib.error.HTTPError as e:
                 if e.code == 429:
                     time.sleep(1.2)
@@ -339,6 +340,7 @@ def fetch_wiki_unit(unit_name: str):
                             if "infobox" in wt.lower():
                                 content = wt
                                 break
+                break
             except urllib.error.HTTPError as e:
                 if e.code == 429:
                     time.sleep(1.2)
@@ -492,8 +494,10 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
     parsed_hp = parse_stat(data.get("HP"))
     hp = int(parsed_hp) if (parsed_hp is not None and parsed_hp > 0) else 50
 
-    p_atk = int(parse_stat(data.get("PAttack"))) if data.get("PAttack") else None
-    m_atk = int(parse_stat(data.get("MAttack"))) if data.get("MAttack") else None
+    raw_p = parse_stat(data.get("PAttack"))
+    raw_m = parse_stat(data.get("MAttack"))
+    p_atk = int(raw_p) if (raw_p is not None and raw_p > 0) else None
+    m_atk = int(raw_m) if (raw_m is not None and raw_m > 0) else None
     rof = float(parse_stat(data.get("ROF")) or 2.0)
     arm = int(parse_stat(data.get("Armor")) if data.get("Armor") is not None else 0)
     parm = int(parse_stat(data.get("PierceArmor")) if data.get("PierceArmor") is not None else 0)
@@ -612,8 +616,6 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
         p_atk += up.get("r_atk_val", 0)
         if up.get("chemistry"):
             p_atk += 1
-        if up.get("cranequins") and any(w in u.name.lower() for w in ["crossbowman", "arbalester"]):
-            p_atk += 1
         if up.get("recurve_bow") and "cavalry archer" in u.name.lower():
             p_atk += 1
         if up.get("bogsveigar") and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["archer", "ship"]):
@@ -709,6 +711,9 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
 
         if up.get("parthian") and "spearman" in [normalize_class_name(ac) for ac in opponent.armor_class]:
             active_bonus += (2 if "unique unit" in u.armor_class else 4)
+
+        if up.get("cranequins") and "infantry" in [normalize_class_name(ac) for ac in opponent.armor_class]:
+            active_bonus += 2
 
         if civ == "Gurjaras" and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["cavalry", "camel", "elephant"]) and active_bonus > 0:
             active_bonus = int(active_bonus * 1.4)
@@ -1066,11 +1071,13 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         has_c_arm = any(k in boost for k in ["scale barding armor", "chain barding armor", "plate barding armor"])
         has_a_arm = any(k in boost for k in ["padded archer armor", "leather archer armor", "ring archer armor"])
 
-        def is_tech_permitted(tech_name: str) -> bool:
+        def is_tech_permitted(tech_name: str, is_unique: bool = False) -> bool:
             t_clean = tech_name.strip().lower()
             if t_clean not in boost:
                 return False
-            if ftt or civ == "Generic":
+            if civ == "Generic":
+                return ftt if is_unique else True
+            if ftt:
                 return True
             if civ_techs and t_clean not in civ_techs:
                 return False
@@ -1096,34 +1103,34 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         has_loom = is_villager
         has_supremacy = is_villager and (ftt or civ == "Spanish")
 
-        has_kataparuto = is_tech_permitted("kataparuto")
-        has_warwolf = is_tech_permitted("warwolf")
-        has_ironclad = is_tech_permitted("ironclad")
-        has_furor = is_tech_permitted("furor celticus") or is_tech_permitted("furor celtica")
-        has_recurve = is_tech_permitted("recurve bow")
-        has_rocketry = is_tech_permitted("rocketry")
-        has_garland = is_tech_permitted("garland wars")
-        has_farimba = is_tech_permitted("farimba")
-        has_wootz = is_tech_permitted("wootz steel")
-        has_stirrups = is_tech_permitted("stirrups")
-        has_hauberk = is_tech_permitted("hauberk")
-        has_sipahi = is_tech_permitted("sipahi")
-        has_el_dorado = is_tech_permitted("el dorado")
-        has_chatras = is_tech_permitted("chatras")
-        has_comitatenses = is_tech_permitted("comitatenses")
-        has_bogsveigar = is_tech_permitted("bogsveigar")
-        has_tower_shields = is_tech_permitted("tower shields")
-        has_pavise = is_tech_permitted("pavise")
-        has_silk_armor = is_tech_permitted("silk armor")
-        has_fabric_shields = is_tech_permitted("fabric shields")
-        has_bagains = is_tech_permitted("bagains")
-        has_carracks = is_tech_permitted("carracks")
-        has_panokseon = is_tech_permitted("panokseon")
-        has_artillery = is_tech_permitted("artillery")
-        has_greek_fire = is_tech_permitted("greek fire")
-        has_counterweights = is_tech_permitted("counterweights")
-        has_curare = is_tech_permitted("curare")
-        has_caciques = is_tech_permitted("caciques")
+        has_kataparuto = is_tech_permitted("kataparuto", True)
+        has_warwolf = is_tech_permitted("warwolf", True)
+        has_ironclad = is_tech_permitted("ironclad", True)
+        has_furor = is_tech_permitted("furor celticus", True) or is_tech_permitted("furor celtica", True)
+        has_recurve = is_tech_permitted("recurve bow", True)
+        has_rocketry = is_tech_permitted("rocketry", True)
+        has_garland = is_tech_permitted("garland wars", True)
+        has_farimba = is_tech_permitted("farimba", True)
+        has_wootz = is_tech_permitted("wootz steel", True)
+        has_stirrups = is_tech_permitted("stirrups", True)
+        has_hauberk = is_tech_permitted("hauberk", True)
+        has_sipahi = is_tech_permitted("sipahi", True)
+        has_el_dorado = is_tech_permitted("el dorado", True)
+        has_chatras = is_tech_permitted("chatras", True)
+        has_comitatenses = is_tech_permitted("comitatenses", True)
+        has_bogsveigar = is_tech_permitted("bogsveigar", True)
+        has_tower_shields = is_tech_permitted("tower shields", True)
+        has_pavise = is_tech_permitted("pavise", True)
+        has_silk_armor = is_tech_permitted("silk armor", True)
+        has_fabric_shields = is_tech_permitted("fabric shields", True)
+        has_bagains = is_tech_permitted("bagains", True)
+        has_carracks = is_tech_permitted("carracks", True)
+        has_panokseon = is_tech_permitted("panokseon", True)
+        has_artillery = is_tech_permitted("artillery", True)
+        has_greek_fire = is_tech_permitted("greek fire", True)
+        has_counterweights = is_tech_permitted("counterweights", True)
+        has_curare = is_tech_permitted("curare", True)
+        has_caciques = is_tech_permitted("caciques", True)
 
         if fu:
             m_val = 0
@@ -1161,34 +1168,34 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
             upgrades["loom"] = has_loom
             upgrades["supremacy"] = has_supremacy
 
-            upgrades["kataparuto"] = has_kataparuto
-            upgrades["warwolf"] = has_warwolf
-            upgrades["ironclad"] = has_ironclad
-            upgrades["furor_celticus"] = has_furor
-            upgrades["recurve_bow"] = has_recurve
-            upgrades["rocketry"] = has_rocketry
-            upgrades["garland_wars"] = has_garland
-            upgrades["farimba"] = has_farimba
-            upgrades["wootz_steel"] = has_wootz
-            upgrades["stirrups"] = has_stirrups
-            upgrades["hauberk"] = has_hauberk
-            upgrades["sipahi"] = has_sipahi
-            upgrades["el_dorado"] = has_el_dorado
-            upgrades["chatras"] = has_chatras
-            upgrades["comitatenses"] = has_comitatenses
-            upgrades["bogsveigar"] = has_bogsveigar
-            upgrades["tower_shields"] = has_tower_shields
-            upgrades["pavise"] = has_pavise
-            upgrades["silk_armor"] = has_silk_armor
-            upgrades["fabric_shields"] = has_fabric_shields
-            upgrades["bagains"] = has_bagains
-            upgrades["carracks"] = has_carracks
-            upgrades["panokseon"] = has_panokseon
-            upgrades["artillery"] = has_artillery
-            upgrades["greek_fire"] = has_greek_fire
-            upgrades["counterweights"] = has_counterweights
-            upgrades["curare"] = has_curare
-            upgrades["caciques"] = has_caciques
+            upgrades["kataparuto"] = has_kataparuto and civ != "Generic"
+            upgrades["warwolf"] = has_warwolf and civ != "Generic"
+            upgrades["ironclad"] = has_ironclad and civ != "Generic"
+            upgrades["furor_celticus"] = has_furor and civ != "Generic"
+            upgrades["recurve_bow"] = has_recurve and civ != "Generic"
+            upgrades["rocketry"] = has_rocketry and civ != "Generic"
+            upgrades["garland_wars"] = has_garland and civ != "Generic"
+            upgrades["farimba"] = has_farimba and civ != "Generic"
+            upgrades["wootz_steel"] = has_wootz and civ != "Generic"
+            upgrades["stirrups"] = has_stirrups and civ != "Generic"
+            upgrades["hauberk"] = has_hauberk and civ != "Generic"
+            upgrades["sipahi"] = has_sipahi and civ != "Generic"
+            upgrades["el_dorado"] = has_el_dorado and civ != "Generic"
+            upgrades["chatras"] = has_chatras and civ != "Generic"
+            upgrades["comitatenses"] = has_comitatenses and civ != "Generic"
+            upgrades["bogsveigar"] = has_bogsveigar and civ != "Generic"
+            upgrades["tower_shields"] = has_tower_shields and civ != "Generic"
+            upgrades["pavise"] = has_pavise and civ != "Generic"
+            upgrades["silk_armor"] = has_silk_armor and civ != "Generic"
+            upgrades["fabric_shields"] = has_fabric_shields and civ != "Generic"
+            upgrades["bagains"] = has_bagains and civ != "Generic"
+            upgrades["carracks"] = has_carracks and civ != "Generic"
+            upgrades["panokseon"] = has_panokseon and civ != "Generic"
+            upgrades["artillery"] = has_artillery and civ != "Generic"
+            upgrades["greek_fire"] = has_greek_fire and civ != "Generic"
+            upgrades["counterweights"] = has_counterweights and civ != "Generic"
+            upgrades["curare"] = has_curare and civ != "Generic"
+            upgrades["caciques"] = has_caciques and civ != "Generic"
         else:
             col_a, col_b = st.columns(2)
             with col_a:
