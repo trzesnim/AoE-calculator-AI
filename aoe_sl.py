@@ -1160,7 +1160,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         # FIX 1 & FIX 2: Filter selectable_units dynamically
         if civ != "Generic" and not ftt:
             selectable_units = []
-            if civ in techtree and f"elite {unit_name.lower()}" in global_known_units:
+            if civ in techtree
                 civ_units_set = techtree[civ].get("units", set())
                 for u in sorted(UNITS):
                     u_lower = u.lower()
@@ -1214,17 +1214,19 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
             if ftt or civ == "Generic" or unit_name in ["Kipchak", "Genitour"]:
                 can_be_elite = True
             else:
-                if civ in techtree:
-                    civ_units_set = techtree[civ].get("units", set())
-                    can_be_elite = f"elite {unit_name.lower()}" in civ_units_set
+                elite_tag = f"elite {unit_name.lower()}"
+                # 1. Sprawdź oficjalne drzewko, jeśli cywilizacja w nim istnieje
+                if civ in techtree and elite_tag in techtree[civ].get("units", set()):
+                    can_be_elite = True
                 else:
+                    # 2. Jeśli jednostki nie ma w starym drzewku (nowe DLC), sprawdź Fandom Wiki
                     content, _, _, _, wiki_allowed_civs = fetch_wiki_unit(unit_name, is_elite=True)
                     if wiki_allowed_civs:
                         can_be_elite = civ in wiki_allowed_civs
                     elif content:
                         can_be_elite = check_fandom_availability(content, civ)
                     else:
-                        can_be_elite = True
+                        can_be_elite = False
 
         if can_be_elite:
             is_elite = st.checkbox(f"Elite {unit_name}?", key=f"elite_{side_idx}")
