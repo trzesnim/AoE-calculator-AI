@@ -543,7 +543,11 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
                       return found_dict[age_map[a]]
 
       # 2. Check for multiline <br> segments (e.g. Castle / Imperial / Elite)
-      segments = re.split(r"<br\s*/?>", val_str, flags=re.I)
+      raw_segments = re.split(r"<br\s*/?>", val_str, flags=re.I)
+      segments = [
+          s for s in raw_segments
+          if not any(w in s.lower() for w in ["secondary", "additional", "extra", "projectile", "charge", "trample", "blast"])
+      ] or [raw_segments[0]]
       if len(segments) > 1:
           resolved = False
           if is_elite:
@@ -562,6 +566,8 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
                       break
           if not resolved:
               val_str = segments[0]
+      else:
+          val_str = segments[0]
 
       # 3. Split by comma for base vs elite
       if "," in val_str:
@@ -608,19 +614,22 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
     bonus_str = data.get("AttackBonus", "")
     attack_bonus = {}
     if bonus_str:
-      clean_bonus_str = re.sub(r"\{\{tt\|([^|]+)\|.*?\}\}", r"\g<1>", str(bonus_str)).replace("\u2212", "-")
-      for b_line in re.split(r"[\r\n]+|<br\s*/?>", clean_bonus_str, flags=re.I):
-          m_b = re.search(r"([+-]?\d+(?:\s*,\s*[+-]?\d+)?)\s*(?:\([^)]*\))?\s*vs\.?\s*.*?2class\|([^}|]+)", b_line, re.I)
-          if m_b:
-              nums, cls = m_b.group(1), m_b.group(2)
-              parts = [p.strip() for p in nums.split(",")]
-              val = parts[1] if (is_elite and len(parts) > 1) else parts[0]
-              try:
-                  norm_cls = normalize_class_name(cls)
-                  val_int = int(val)
-                  attack_bonus[norm_cls] = val_int
-              except ValueError:
-                  pass
+        clean_bonus_str = re.sub(r"\{\{tt\|([^|]+)\|.*?\}\}", r"\g<1>", str(bonus_str)).replace("\u2212", "-").replace("\u2013", "-")
+        for b_line in re.split(r"[\r\n]+|<br\s*/?>", clean_bonus_str, flags=re.I):
+            m_b = re.search(r"^(.*?)\bvs\.?\s*.*?2class\|([^}|]+)", b_line, re.I)
+            if m_b:
+                left_part, cls = m_b.group(1), m_b.group(2)
+                # Strip templates and parenthetical notes like (Elite) or (Castle Age) before extracting numbers
+                left_clean = re.sub(r"\{\{[^}]+\}\}", "", left_part)
+                left_clean = re.sub(r"\([^)]*\)", "", left_clean)
+                nums = re.findall(r"[+-]?\d+", left_clean)
+                if nums:
+                    val = nums[-1] if (is_elite and len(nums) > 1) else nums[0]
+                    try:
+                        norm_cls = normalize_class_name(cls)
+                        attack_bonus[norm_cls] = int(val)
+                    except ValueError:
+                        pass
 
     if "skirmisher" in norm:
         attack_bonus["unshielded"] = 5 if "imperial" in norm else (4 if is_elite else 3)
@@ -630,16 +639,19 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
     if "jian swordsman" in norm and "unshielded" not in armor_class:
         armor_class.append("unshielded")
 
-    # FIX 8: Parse class armor resistance (Cataphract +12/+16, Condottiero +10)
+    # FIX 8: Parse class armor resistance (Cataphract +12/+16, Condottiero +10) even with nested ({{Icon|Elite}})
     class_resistance = {}
-    for m_res in re.finditer(r"2class\|([^}|]+)\}\}\s*\(([+-]?\d+(?:\s*,\s*[+-]?\d+)?)\)", class_str):
+    for m_res in re.finditer(r"2class\|([^}|]+)\}\}(?:\s|<br\s*/?>)*\(([^r\n]*?[+-]?\d+[^r\n]*?)\)", class_str, re.I):
         c_name = normalize_class_name(m_res.group(1))
-        parts = [p.strip() for p in m_res.group(2).split(",")]
-        val = parts[1] if (is_elite and len(parts) > 1) else parts[0]
-        try:
-            class_resistance[c_name] = int(val)
-        except ValueError:
-            pass
+        res_clean = re.sub(r"\{\{[^}]+\}\}", "", m_res.group(2))
+        res_clean = re.sub(r"\([^)]*\)", "", res_clean)
+        nums = re.findall(r"[+-]?\d+", res_clean)
+        if nums:
+            val = nums[-1] if (is_elite and len(nums) > 1) else nums[0]
+            try:
+                class_resistance[c_name] = int(val)
+            except ValueError:
+                pass
 
     return Unit(
         final_name, hp, p_atk, m_atk, rof, arm, parm,
@@ -994,7 +1006,7 @@ def calculate_kill_trajectory(attacker: Unit, defender: Unit, civ_att: str, civ_
 
     while cur_hp > 0 and hits < 4000:
         target_arm = cur_target_p if is_p else cur_target_m
-        if "leitis" in attacker.name.lower() or up_att.get("wootz_steel"):
+        if not is_p and ("leitis" in attacker.name.lower() or up_att.get("wootz_steel")):
             target_arm = 0
         # FIX 6: Composite Bowman ignores enemy pierce armor
         elif is_p and "composite bowman" in attacker.name.lower():
@@ -1215,11 +1227,11 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                 can_be_elite = True
             else:
                 elite_tag = f"elite {unit_name.lower()}"
-                # 1. Sprawdź oficjalne drzewko, jeśli cywilizacja w nim istnieje
-                if civ in techtree and elite_tag in techtree[civ].get("units", set()):
-                    can_be_elite = True
+                # 1. Jeśli cywilizacja i jednostka Elite są znane w aoe2techtree, drzewko rozstrzyga ostatecznie
+                if civ in techtree and elite_tag in global_known_units:
+                    can_be_elite = elite_tag in techtree[civ].get("units", set())
                 else:
-                    # 2. Jeśli jednostki nie ma w starym drzewku (nowe DLC), sprawdź Fandom Wiki
+                    # 2. Tylko dla nowych cywilizacji/jednostek z DLC spoza aoe2techtree sprawdź Fandom Wiki
                     content, _, _, _, wiki_allowed_civs = fetch_wiki_unit(unit_name, is_elite=True)
                     if wiki_allowed_civs:
                         can_be_elite = civ in wiki_allowed_civs
