@@ -216,6 +216,11 @@ def load_techtree_data() -> tuple[dict, set]:
                 for norm_name in unit_id_to_names[uid]:
                     c_units.add(norm_name)
 
+        if "konnik" in c_units:
+            c_units.add("dismounted konnik")
+        if "elite konnik" in c_units:
+            c_units.add("elite dismounted konnik")
+
         for item in list(t_raw) + t_extra:
             tid = item if isinstance(item, int) else item.get("id") if isinstance(item, dict) else None
             if tid is not None and tid in tech_id_to_name:
@@ -500,8 +505,8 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
         return Unit(unit_name, 50, rof=2.0, boost_tech=boost_tech_str, elite=is_elite)
 
     ibox = extract_template(content, "Infobox AoE2 unit") or extract_template(content, "Infobox")
-    if (("trebuchet" in norm and "PAttack" not in ibox) or "dismounted konnik" in norm) and content.count("Infobox AoE2 unit") > 1:
-        ibox = extract_template(content[content.find("Infobox AoE2 unit") + 10:], "Infobox AoE2 unit")
+    if (("trebuchet" in norm and "PAttack" not in ibox) or "dismounted konnik" in norm) and content.lower().count("infobox aoe2 unit") > 1:
+        ibox = extract_template(content[content.lower().find("infobox aoe2 unit") + 10:], "Infobox AoE2 unit")
 
     # BUG 3: Multiline-aware field extraction
     data = {}
@@ -523,17 +528,19 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
       # Clean tooltips with explicit backreference
       val_str = re.sub(r"\{\{tt\|([^|]+)\|.*?\}\}", r"\g<1>", val_str)
 
-      # 1. Check inline age-dependent stats (both "Age}} 5" and "5 (Age)" formats)
-      age_map = {1: "dark age", 2: "feudal age", 3: "castle age", 4: "imperial age"}
-      found_dict = {}
-      for m in re.finditer(r"(Dark Age|Feudal Age|Castle Age|Imperial Age)(?:\|[^}]*)?\}\}\s*([+-]?\d+(?:\.\d+)?)", val_str, re.I):
-          found_dict[m.group(1).lower()] = float(m.group(2))
-      for m in re.finditer(r"([+-]?\d+(?:\.\d+)?)\s*\([^)]*?(Dark Age|Feudal Age|Castle Age|Imperial Age)", val_str, re.I):
-          found_dict[m.group(2).lower()] = float(m.group(1))
-      if found_dict:
-          for a in range(age, 0, -1):
-              if age_map[a] in found_dict:
-                  return found_dict[age_map[a]]
+      # 1. Check inline age-dependent stats (only if not overridden by an Elite stat)
+      has_elite_override = is_elite and ("elite" in val_str.lower() or "," in val_str.split("}")[-1])
+      if not has_elite_override:
+          age_map = {1: "dark age", 2: "feudal age", 3: "castle age", 4: "imperial age"}
+          found_dict = {}
+          for m in re.finditer(r"(Dark Age|Feudal Age|Castle Age|Imperial Age)(?:\|[^}]*)?\}\}\s*([+-]?\d+(?:\.\d+)?)", val_str, re.I):
+              found_dict[m.group(1).lower()] = float(m.group(2))
+          for m in re.finditer(r"([+-]?\d+(?:\.\d+)?)\s*\([^)]*?(Dark Age|Feudal Age|Castle Age|Imperial Age)", val_str, re.I):
+              found_dict[m.group(2).lower()] = float(m.group(1))
+          if found_dict:
+              for a in range(age, 0, -1):
+                  if age_map[a] in found_dict:
+                      return found_dict[age_map[a]]
 
       # 2. Check for multiline <br> segments (e.g. Castle / Imperial / Elite)
       segments = re.split(r"<br\s*/?>", val_str, flags=re.I)
@@ -615,7 +622,7 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
                   pass
 
     if "skirmisher" in norm:
-        attack_bonus["unshielded"] = 4 if is_elite else 3
+        attack_bonus["unshielded"] = 5 if "imperial" in norm else (4 if is_elite else 3)
 
     class_str = data.get("Class", "")
     armor_class = [normalize_class_name(c) for c in re.findall(r"2class\|([^}|]+)", class_str)]
@@ -852,7 +859,8 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
         if civ == "Gurjaras" and any(c in norm_classes for c in ["cavalry", "camel", "elephant"]) and active_bonus > 0:
             active_bonus = int(active_bonus * 1.4)
 
-        if getattr(opponent, "_civ", None) == "Sicilians":
+        opp_norm_classes = [normalize_class_name(ac) for ac in opponent.armor_class]
+        if getattr(opponent, "_civ", None) == "Sicilians" and not any(c in opp_norm_classes for c in ["siege weapon", "ship"]):
             active_bonus = int(active_bonus * 0.67)
 
     return {
@@ -907,12 +915,15 @@ def format_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -
         special.append("Kataparuto (33% Faster Attack & 4x Pack Speed)")
     if up.get("warwolf"):
         special.append("Warwolf (100% Blast Damage)")
+    norm_classes = [normalize_class_name(ac) for ac in u.armor_class]
+    is_unique_unit = "unique unit" in norm_classes
     if up.get("thumb_ring"):
         is_skirm = any(w in u.name.lower() for w in ["skirmisher", "genitour"])
-        if not is_skirm:
-            rate_txt = "11% Faster Attack" if "cavalry archer" in str(u.armor_class).lower() else "18% Faster Attack"
+        is_melee_ratha = "ratha" in u.name.lower() and up.get("ratha_mode") == "Melee"
+        if not is_skirm and not is_melee_ratha:
+            rate_txt = "11% Faster Attack" if "cavalry archer" in norm_classes else "18% Faster Attack"
             special.append(f"Thumb Ring ({rate_txt})")
-        else:
+        elif is_skirm:
             special.append("Thumb Ring (100% Accuracy)")
     if up.get("loom"):
         special.append("Loom (+15 HP, +1/+2 Armor)")
@@ -924,17 +935,17 @@ def format_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -
         special.append("Dry Dock (+15% Ship Speed)")
     if up.get("carracks"):
         special.append("Carracks (+1/+1 Ship Armor)")
-    if civ == "Sicilians":
+    if civ == "Sicilians" and not any(c in norm_classes for c in ["siege weapon", "ship"]):
         special.append("Takes 33% Less Bonus Damage")
-    if civ == "Romans" and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["infantry"]):
+    if civ == "Romans" and "infantry" in norm_classes:
         special.append("2x Blacksmith Armor Effect")
-    if civ == "Burmese" and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["infantry"]):
+    if civ == "Burmese" and "infantry" in norm_classes:
         special.append("+3 Infantry Melee Attack")
-    if civ == "Teutons":
+    if civ == "Teutons" and not is_unique_unit and ("infantry" in norm_classes or ("cavalry" in norm_classes and "scout cavalry" not in u.name.lower())):
         special.append("+2 Melee Armor")
-    if civ == "Malians" and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["infantry"]):
+    if civ == "Malians" and not is_unique_unit and "infantry" in norm_classes:
         special.append("+3 Infantry Pierce Armor")
-    if civ == "Gurjaras" and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["cavalry", "camel", "elephant"]):
+    if civ == "Gurjaras" and any(c in norm_classes for c in ["cavalry", "camel", "elephant"]):
         special.append("+40% Mounted Bonus Damage")
     if u.name in SUICIDE_UNITS:
         special.append("Single-Use Explosive/Suicide Unit")
@@ -1264,11 +1275,19 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
             max_c_arm = 3 if "plate barding armor" in civ_techs else (2 if "chain barding armor" in civ_techs else (1 if "scale barding armor" in civ_techs else 0))
             max_a_arm = 3 if "ring archer armor" in civ_techs else (2 if "leather archer armor" in civ_techs else (1 if "padded archer armor" in civ_techs else 0))
 
+        u_norm_classes = [normalize_class_name(ac) for ac in base_unit.armor_class]
         has_m_atk = any(k in boost for k in ["forging", "iron casting", "blast furnace"])
         has_r_atk = any(k in boost for k in ["fletching", "bodkin arrow", "bracer"])
         has_i_arm = any(k in boost for k in ["scale mail armor", "chain mail armor", "plate mail armor"])
         has_c_arm = any(k in boost for k in ["scale barding armor", "chain barding armor", "plate barding armor"])
         has_a_arm = any(k in boost for k in ["padded archer armor", "leather archer armor", "ring archer armor"])
+
+        # Disambiguate shared pages (e.g. Konnik vs Dismounted Konnik) that list both infantry & cavalry armor
+        if has_i_arm and has_c_arm:
+            if "cavalry" in u_norm_classes and "infantry" not in u_norm_classes:
+                has_i_arm = False
+            elif "infantry" in u_norm_classes and "cavalry" not in u_norm_classes:
+                has_c_arm = False
 
         # FIX 7: Unique techs only permitted for Generic or native civ
         def is_tech_permitted(tech_name: str, is_unique: bool = False) -> bool:
@@ -1288,11 +1307,11 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                     return False
             return True
 
-        has_bloodlines = is_tech_permitted("bloodlines")
+        has_bloodlines = is_tech_permitted("bloodlines") and any(c in u_norm_classes for c in ["cavalry", "camel", "elephant", "cavalry archer"])
         has_thumb_ring = is_tech_permitted("thumb ring")
         has_parthian = is_tech_permitted("parthian tactics")
         has_chemistry = is_tech_permitted("chemistry")
-        has_gambesons = is_tech_permitted("gambesons")
+        has_gambesons = is_tech_permitted("gambesons") and "infantry" in u_norm_classes
         has_careening = is_tech_permitted("careening")
         has_dry_dock = is_tech_permitted("dry dock")
         has_siege_engineers = is_tech_permitted("siege engineers")
@@ -1314,7 +1333,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         has_garland = is_tech_permitted("garland wars", True)
         has_farimba = is_tech_permitted("farimba", True)
         has_wootz = is_tech_permitted("wootz steel", True)
-        has_stirrups = is_tech_permitted("stirrups", True)
+        has_stirrups = is_tech_permitted("stirrups", True) and "cavalry" in u_norm_classes
         has_hauberk = is_tech_permitted("hauberk", True)
         has_sipahi = is_tech_permitted("sipahi", True)
         has_el_dorado = is_tech_permitted("el dorado", True)
