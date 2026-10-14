@@ -556,7 +556,6 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
                     norm_cls = normalize_class_name(cls)
                     val_int = int(val)
                     attack_bonus[norm_cls] = val_int
-                    attack_bonus[cls.strip()] = val_int
                 except ValueError:
                     pass
 
@@ -620,8 +619,11 @@ def is_unit_available(civ: str, unit_name: str) -> tuple[bool, str]:
 
     return True, ""
 
-# FIX 4, FIX 5, FIX 8: compute_effective_stats
+# FIX 1, FIX 3, FIX 4, FIX 5, FIX 8: compute_effective_stats
 def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -> dict:
+    norm_classes = [normalize_class_name(ac) for ac in u.armor_class]
+    is_unique_unit = "unique unit" in norm_classes
+
     hp = u.hp
     if up.get("bloodlines"):
         hp += 20
@@ -630,13 +632,13 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
     if up.get("supremacy") and "villager" in u.name.lower():
         hp += 40
 
-    if civ == "Franks" and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["cavalry"]):
+    if civ == "Franks" and any(c in norm_classes for c in ["cavalry"]):
         hp = int(hp * 1.2)
-    elif civ == "Vikings" and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["infantry"]):
+    elif civ == "Vikings" and not is_unique_unit and any(c in norm_classes for c in ["infantry"]):
         hp = int(hp * 1.2)
-    elif civ == "Turks" and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["gunpowder unit"]):
+    elif civ == "Turks" and not is_unique_unit and any(c in norm_classes for c in ["gunpowder unit"]):
         hp = int(hp * 1.25)
-    elif civ == "Saracens" and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["camel"]):
+    elif civ == "Saracens" and not is_unique_unit and any(c in norm_classes for c in ["camel"]):
         hp += 10
     if up.get("sipahi") and "cavalry archer" in u.name.lower():
         hp += 20
@@ -648,28 +650,29 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
         hp = int(hp * 1.4)
 
     rof = u.rof
-    if civ == "Japanese" and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["infantry"]):
+    if civ == "Japanese" and not is_unique_unit and any(c in norm_classes for c in ["infantry"]):
         rof *= 0.75
-    elif civ == "Mongols" and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["cavalry archer"]):
+    elif civ == "Mongols" and not is_unique_unit and any(c in norm_classes for c in ["cavalry archer"]):
         rof *= 0.80
-    elif civ == "Hindustanis" and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["camel"]):
+    elif civ == "Hindustanis" and any(c in norm_classes for c in ["camel"]):
         rof *= 0.833
-    elif civ == "Saracens" and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["ship"]) and any(w in u.name.lower() for w in ["galley", "galleon"]):
+    elif civ == "Saracens" and any(c in norm_classes for c in ["ship"]) and any(w in u.name.lower() for w in ["galley", "galleon"]):
         rof *= 0.80
     elif civ == "Byzantines" and "fire" in u.name.lower():
         rof *= 0.80
-    elif up.get("stirrups") and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["cavalry"]):
+    elif up.get("stirrups") and any(c in norm_classes for c in ["cavalry"]):
         rof *= 0.75
     elif up.get("kataparuto") and "trebuchet" in u.name.lower():
         rof *= 0.75
 
-    # BUG 5: Skirmisher / Genitour Thumb Ring does NOT increase ROF
+    # FIX 4: Skirmisher / Genitour & Melee Ratha Thumb Ring does NOT increase ROF
     if up.get("thumb_ring"):
         is_skirm_or_genitour = any(w in u.name.lower() for w in ["skirmisher", "genitour"])
-        if not is_skirm_or_genitour:
-            if any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["cavalry archer"]):
+        is_melee_ratha = "ratha" in u.name.lower() and up.get("ratha_mode") == "Melee"
+        if not is_skirm_or_genitour and not is_melee_ratha:
+            if any(c in norm_classes for c in ["cavalry archer"]):
                 rof *= 0.90
-            elif any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["archer"]):
+            elif any(c in norm_classes for c in ["archer"]):
                 rof *= 0.85
 
     p_atk = u.p_attack
@@ -688,7 +691,7 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
             p_atk += 1
         if up.get("recurve_bow") and "cavalry archer" in u.name.lower():
             p_atk += 1
-        if up.get("bogsveigar") and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["archer", "ship"]):
+        if up.get("bogsveigar") and any(c in norm_classes for c in ["archer", "ship"]):
             p_atk += 1
         if up.get("rocketry"):
             if "chu ko nu" in u.name.lower():
@@ -701,13 +704,13 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
     if m_atk is not None:
         m_atk += up.get("m_atk_val", 0)
         # Burmese civ bonus: +3 melee attack for infantry
-        if civ == "Burmese" and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["infantry"]):
+        if civ == "Burmese" and any(c in norm_classes for c in ["infantry"]):
             m_atk += 3
         if up.get("supremacy") and "villager" in u.name.lower():
             m_atk += 6
-        if up.get("garland_wars") and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["infantry"]):
+        if up.get("garland_wars") and any(c in norm_classes for c in ["infantry"]):
             m_atk += 4
-        if up.get("farimba") and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["cavalry", "camel"]):
+        if up.get("farimba") and any(c in norm_classes for c in ["cavalry", "camel"]):
             m_atk += 5
 
         # FIX 5: Lithuanian Relic Bonus (+1 per relic, up to +4)
@@ -718,22 +721,22 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
     p_arm_val = up.get("p_arm_val", 0)
 
     # Romans armor multiplier: Apply * 2 to Blacksmith infantry armor upgrades
-    if civ == "Romans" and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["infantry"]):
+    if civ == "Romans" and any(c in norm_classes for c in ["infantry"]):
         m_arm_val *= 2
         p_arm_val *= 2
 
     m_arm = u.armor + m_arm_val
     p_arm = u.pierce_armor + p_arm_val
 
-    # Teutons civ bonus: +2 melee armor for infantry and cavalry (except Scout Cavalry)
-    if civ == "Teutons":
-        if any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["infantry"]):
+    # Teutons civ bonus: +2 melee armor for infantry and cavalry (except Scout Cavalry; not on Unique Units)
+    if civ == "Teutons" and not is_unique_unit:
+        if any(c in norm_classes for c in ["infantry"]):
             m_arm += 2
-        elif any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["cavalry"]) and "scout cavalry" not in u.name.lower():
+        elif any(c in norm_classes for c in ["cavalry"]) and "scout cavalry" not in u.name.lower():
             m_arm += 2
 
-    # Malians civ bonus: +3 pierce armor for infantry
-    if civ == "Malians" and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["infantry"]):
+    # Malians civ bonus: +3 pierce armor for infantry (not on Unique Units)
+    if civ == "Malians" and not is_unique_unit and any(c in norm_classes for c in ["infantry"]):
         p_arm += 3
 
     # Loom and Supremacy for Villagers
@@ -747,11 +750,11 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
     if up.get("parthian"):
         m_arm += 1
         p_arm += 2
-    if up.get("gambesons") and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["infantry"]):
+    if up.get("gambesons") and any(c in norm_classes for c in ["infantry"]):
         p_arm += 1
-    if up.get("careening") and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["ship"]):
+    if up.get("careening") and any(c in norm_classes for c in ["ship"]):
         p_arm += 1
-    if up.get("carracks") and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["ship"]):
+    if up.get("carracks") and any(c in norm_classes for c in ["ship"]):
         m_arm += 1
         p_arm += 1
     if up.get("ironclad") and "siege" in str(u.armor_class).lower():
@@ -774,35 +777,24 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
     if up.get("bagains"):
         m_arm += 5
 
-    # FIX 8: CLASS ARMOR RESISTANCE & LOGISTICA
+    # FIX 3 & FIX 8: CLASS ARMOR RESISTANCE & LOGISTICA
     active_bonus = 0
     if opponent:
         opp_res = getattr(opponent, "class_resistance", {})
-        for opp_cls in opponent.armor_class:
-            norm_opp = normalize_class_name(opp_cls)
-            res_val = opp_res.get(norm_opp, 0)
-            if norm_opp in u.attack_bonus:
-                b_val = u.attack_bonus[norm_opp]
-                active_bonus += max(0, b_val - res_val)
-            elif opp_cls in u.attack_bonus:
-                b_val = u.attack_bonus[opp_cls]
-                active_bonus += max(0, b_val - res_val)
+        effective_bonuses = dict(u.attack_bonus)
+        if up.get("parthian"):
+            effective_bonuses["spearman"] = effective_bonuses.get("spearman", 0) + (2 if is_unique_unit else 4)
+        if up.get("cranequins"):
+            effective_bonuses["infantry"] = effective_bonuses.get("infantry", 0) + 2
+        if up.get("logistica") and "cataphract" in u.name.lower():
+            effective_bonuses["infantry"] = effective_bonuses.get("infantry", 0) + 6
 
-        if up.get("parthian") and "spearman" in [normalize_class_name(ac) for ac in opponent.armor_class]:
-            spear_res = opp_res.get("spearman", 0)
-            p_bonus = (2 if "unique unit" in u.armor_class else 4)
-            active_bonus += max(0, p_bonus - spear_res)
+        for opp_cls in set(normalize_class_name(ac) for ac in opponent.armor_class):
+            if opp_cls in effective_bonuses:
+                res_val = opp_res.get(opp_cls, 0)
+                active_bonus += max(0, effective_bonuses[opp_cls] - res_val)
 
-        if up.get("cranequins") and "infantry" in [normalize_class_name(ac) for ac in opponent.armor_class]:
-            inf_res = opp_res.get("infantry", 0)
-            active_bonus += max(0, 2 - inf_res)
-
-        # FIX 8: Logistica: Cataphract +6 bonus damage vs infantry
-        if up.get("logistica") and "cataphract" in u.name.lower() and "infantry" in [normalize_class_name(ac) for ac in opponent.armor_class]:
-            inf_res = opp_res.get("infantry", 0)
-            active_bonus += max(0, 6 - inf_res)
-
-        if civ == "Gurjaras" and any(c in [normalize_class_name(ac) for ac in u.armor_class] for c in ["cavalry", "camel", "elephant"]) and active_bonus > 0:
+        if civ == "Gurjaras" and any(c in norm_classes for c in ["cavalry", "camel", "elephant"]) and active_bonus > 0:
             active_bonus = int(active_bonus * 1.4)
 
         if getattr(opponent, "_civ", None) == "Sicilians":
@@ -1202,6 +1194,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         tech_restrictions = getattr(base_unit, "tech_civ_restrictions", {})
 
         civ_techs = techtree.get(civ, {}).get("techs", set()) if (civ != "Generic" and not ftt) else set()
+        all_known_techs = set().union(*(d.get("techs", set()) for d in techtree.values()))
 
         if ftt or civ == "Generic":
             max_m_atk = 3
@@ -1231,7 +1224,8 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                 return ftt if is_unique else True
             if not is_unique and ftt:
                 return True
-            if civ_techs and t_clean not in civ_techs:
+            # FIX 2: Do not block new patch technologies missing from aoe2techtree
+            if civ_techs and t_clean in all_known_techs and t_clean not in civ_techs:
                 return False
             if t_clean in tech_restrictions:
                 allowed_c = tech_restrictions[t_clean]
@@ -1247,8 +1241,8 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         has_careening = is_tech_permitted("careening")
         has_dry_dock = is_tech_permitted("dry dock")
         has_siege_engineers = is_tech_permitted("siege engineers")
-        has_cranequins = is_tech_permitted("cranequins", True)
-        has_siphons = is_tech_permitted("siphons", True)
+        has_cranequins = is_tech_permitted("cranequins")
+        has_siphons = is_tech_permitted("siphons")
 
         # Villager Loom & Supremacy
         is_villager = "villager" in unit_name.lower()
@@ -1439,7 +1433,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                 if has_siege_engineers:
                     upgrades["siege_engineers"] = st.checkbox("Siege Engineers (+20% vs Build)", key=f"se_{side_idx}")
                 if has_cranequins:
-                    upgrades["cranequins"] = st.checkbox("Cranequins (+1 Attack)", key=f"cran_{side_idx}")
+                    upgrades["cranequins"] = st.checkbox("Cranequins (+2 vs Infantry)", key=f"cran_{side_idx}")
                 if has_siphons:
                     upgrades["siphons"] = st.checkbox("Siphons (Explosive Initial Burst Strike)", key=f"siph_{side_idx}")
 
