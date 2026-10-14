@@ -427,14 +427,11 @@ def fetch_wiki_unit(unit_name: str, is_elite: bool = False):
     if not content:
         return None, "", {}, {}, []
 
-    # Extract raw substring of Boosts|Technologies
-    pattern_boost = r"Boosts\|Technologies(.+?)(?:\{\{Boosts\||==\s*Civilization|\{\{Availability)"
-    m_boost = re.search(pattern_boost, content, re.DOTALL)
-    # Extract exact Boosts|Technologies template first so Changelog/Trivia is never swallowed
+    # Extract Boosts|Technologies section without swallowing Changelog/Trivia
     boost_tech_str = extract_template(content, "Boosts|Technologies")
-    if not boost_tech_str:
-        m_boost = re.search(r"Boosts\|Technologies(.+?)(?:\{\{Boosts\||==|\{\{Availability)", content, re.DOTALL)
-        boost_tech_str = m_boost.group(1).strip() if m_boost else extract_template(content, "Boosts")
+    if len(boost_tech_str) < 40:
+        m_boost = re.search(r"Boosts\|Technologies(.+?)(?:\{\{Boosts\||\{\{end\}\}|==|\{\{Availability)", content, re.DOTALL | re.I)
+        boost_tech_str = m_boost.group(1).strip() if m_boost else ""
 
     # BUG 4: Split by BOTH newlines and <br> tags
     tech_civ_restrictions = {}
@@ -567,9 +564,10 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
               val_str = segments[0]
 
       # 3. Split by comma for base vs elite
-      comma_match = re.search(r"(.+?)\s*,\s*(.+)", val_str)
-      if comma_match:
-          val_str = comma_match.group(2) if is_elite else comma_match.group(1)
+      if "," in val_str:
+          parts = [p.strip() for p in val_str.split(",") if p.strip()]
+          if parts:
+              val_str = parts[-1] if is_elite else parts[0]
 
       # 4. Strip <br />(\d+) <small> if present
       br_match = re.search(r"<br\s*/?>([+-]?\d+)\s*<small>", val_str, re.I)
@@ -627,7 +625,7 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
     if "skirmisher" in norm:
         attack_bonus["unshielded"] = 5 if "imperial" in norm else (4 if is_elite else 3)
 
-    class_str = data.get("Class", "")
+    class_str = str(data.get("Class", "")).replace("\u2212", "-").replace("\u2013", "-")
     armor_class = [normalize_class_name(c) for c in re.findall(r"2class\|([^}|]+)", class_str)]
     if "jian swordsman" in norm and "unshielded" not in armor_class:
         armor_class.append("unshielded")
@@ -1162,7 +1160,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
         # FIX 1 & FIX 2: Filter selectable_units dynamically
         if civ != "Generic" and not ftt:
             selectable_units = []
-            if civ in techtree:
+            if civ in techtree and f"elite {unit_name.lower()}" in global_known_units:
                 civ_units_set = techtree[civ].get("units", set())
                 for u in sorted(UNITS):
                     u_lower = u.lower()
@@ -1310,8 +1308,11 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
             if not is_unique and ftt:
                 return True
             # FIX 2: Do not block new patch technologies missing from aoe2techtree
-            if civ_techs and t_clean in all_known_techs and t_clean not in civ_techs:
-                return False
+            if t_clean in all_known_techs:
+              if civ in techtree and t_clean not in civ_techs:
+                  return False
+              if civ not in techtree and is_unique:
+                  return False
             if t_clean in tech_restrictions:
                 allowed_c = tech_restrictions[t_clean]
                 if allowed_c and civ not in allowed_c:
