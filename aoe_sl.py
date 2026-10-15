@@ -989,7 +989,7 @@ def format_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -
         special.append("+3 Infantry Pierce Armor")
     if civ == "Gurjaras" and any(c in norm_classes for c in ["cavalry", "camel", "elephant", "war elephant"]):
       special.append("+40% Mounted Bonus Damage")
-  if civ == "Saracens" and not is_unique_unit and "camel" in norm_classes:
+    if civ == "Saracens" and not is_unique_unit and "camel" in norm_classes:
       special.append("+25% Camel HP")
     if u.name in SUICIDE_UNITS:
         special.append("Single-Use Explosive/Suicide Unit")
