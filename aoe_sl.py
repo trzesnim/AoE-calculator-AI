@@ -255,7 +255,7 @@ def check_fandom_availability(wikitext: str, civ: str) -> bool:
     m_civ = re.search(r"\|\s*Civilization\s*=\s*(.*?)(?=\n\s*\||\n\s*\}\}|\Z)", ibox or wikitext, re.I | re.S)
     if m_civ:
         val = m_civ.group(1).split("<!--")[0].strip()
-        if re.search(r"\ball\b", val, re.I):
+        if re.search(r"\ball\b", val, re.I) and "except" not in val.lower():
             return True
         if re.search(r"\b(?:" + civ_pattern + r")\b", val, re.I):
             return True
@@ -266,7 +266,7 @@ def check_fandom_availability(wikitext: str, civ: str) -> bool:
     m_avail = re.search(r"\{\{Availability\|([^}]+)\}\}", wikitext, re.I)
     if m_avail:
         val = m_avail.group(1)
-        if re.search(r"\ball\b", val, re.I):
+        if re.search(r"\ball\b", val, re.I) and "except" not in val.lower():
             return True
         if re.search(r"\b(?:" + civ_pattern + r")\b", val, re.I):
             return True
@@ -451,7 +451,8 @@ def fetch_wiki_unit(unit_name: str, is_elite: bool = False):
             techs = re.findall(r"\{\{2icons\|([^}|]+)", before_only)
             if not techs:
                 techs = re.findall(r"\[\[(?:[^|\]]+\|)?([^\]]+)\]\]", before_only)
-            for t in techs:
+            if techs:
+                t = techs[-1]
                 tech_civ_restrictions[t.strip().lower()] = [normalize_civ_name(c) for c in civ_names if c.strip()]
 
     parsed_techs = {}
@@ -630,12 +631,17 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
             m_b = re.search(r"^(.*?)\bvs\.?\s*.*?2class\|([^}|]+)", b_line, re.I)
             if m_b:
                 left_part, cls = m_b.group(1), m_b.group(2)
-                # Strip templates and parenthetical notes like (Elite) or (Castle Age) before extracting numbers
+                lp_low = left_part.lower()
+                use_upgraded_val = is_elite or (
+                    ("imperial age" in lp_low and age >= 4)
+                    or ("castle age" in lp_low and age >= 3)
+                    or ("feudal age" in lp_low and age >= 2)
+                )
                 left_clean = re.sub(r"\{\{[^}]+\}\}", "", left_part)
                 left_clean = re.sub(r"\([^)]*\)", "", left_clean)
                 nums = re.findall(r"[+-]?\d+", left_clean)
                 if nums:
-                    val = nums[-1] if (is_elite and len(nums) > 1) else nums[0]
+                    val = nums[-1] if (use_upgraded_val and len(nums) > 1) else nums[0]
                     try:
                         norm_cls = normalize_class_name(cls)
                         attack_bonus[norm_cls] = int(val)
@@ -725,7 +731,7 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
     elif civ == "Turks" and not is_unique_unit and any(c in norm_classes for c in ["gunpowder unit"]):
         hp = int(hp * 1.25)
     elif civ == "Saracens" and not is_unique_unit and any(c in norm_classes for c in ["camel"]):
-        hp += 10
+      hp = int(hp * 1.25)
     if up.get("sipahi"):
         hp += 20
     if up.get("el_dorado") and "eagle" in u.name.lower():
@@ -888,7 +894,7 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
                 res_val = opp_res.get(opp_cls, 0)
                 active_bonus += max(0, effective_bonuses[opp_cls] - res_val)
 
-        if civ == "Gurjaras" and any(c in norm_classes for c in ["cavalry", "camel", "elephant"]) and active_bonus > 0:
+        if civ == "Gurjaras" and any(c in norm_classes for c in ["cavalry", "camel", "elephant", "war elephant"]) and active_bonus > 0:
             active_bonus = int(active_bonus * 1.4)
 
         opp_norm_classes = [normalize_class_name(ac) for ac in opponent.armor_class]
@@ -981,8 +987,10 @@ def format_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -
         special.append("+2 Melee Armor")
     if civ == "Malians" and not is_unique_unit and "infantry" in norm_classes:
         special.append("+3 Infantry Pierce Armor")
-    if civ == "Gurjaras" and any(c in norm_classes for c in ["cavalry", "camel", "elephant"]):
-        special.append("+40% Mounted Bonus Damage")
+    if civ == "Gurjaras" and any(c in norm_classes for c in ["cavalry", "camel", "elephant", "war elephant"]):
+      special.append("+40% Mounted Bonus Damage")
+  if civ == "Saracens" and not is_unique_unit and "camel" in norm_classes:
+      special.append("+25% Camel HP")
     if u.name in SUICIDE_UNITS:
         special.append("Single-Use Explosive/Suicide Unit")
 
@@ -1122,7 +1130,7 @@ def simulate_1v1(u1: Unit, u2: Unit, civ1: str, civ2: str, up1: dict, up2: dict)
         return (
             f"\n- Resource Trade: {winner_label} lost ~{win_res_lost} resources ({win_lost_pct*100:.1f}% unit value) "
             f"vs {loser_label} completely destroyed ({lose_res_lost} resources lost). "
-            f"Net advantage: +{diff} resources."
+            f"Net advantage: {diff:+d} resources."
         )
 
     # BUG 6: Clean trajectory resolution
@@ -1353,7 +1361,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                     return False
             return True
 
-        has_bloodlines = is_tech_permitted("bloodlines") and any(c in u_norm_classes for c in ["cavalry", "camel", "elephant", "cavalry archer"])
+        has_bloodlines = is_tech_permitted("bloodlines") and any(c in u_norm_classes for c in ["cavalry", "camel", "elephant", "war elephant", "cavalry archer"])
         has_thumb_ring = is_tech_permitted("thumb ring")
         has_parthian = is_tech_permitted("parthian tactics")
         has_chemistry = is_tech_permitted("chemistry")
