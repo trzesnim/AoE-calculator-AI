@@ -30,11 +30,14 @@ CIVILIZATIONS = [
     "Vikings", "Wei", "Wu"
 ]
 
+# FIX 5: Expanded with camel scout and champi scout
 AGE_DEPENDENT_UNITS = [
     "scout cavalry",
     "eagle scout",
     "flemish militia",
-    "serjeant"
+    "serjeant",
+    "camel scout",
+    "champi scout"
 ]
 
 SUICIDE_UNITS = [
@@ -241,30 +244,30 @@ def normalize_civ_name(c: str) -> str:
     if s.lower() in ("inca", "incas"):
         return "Incas"
     return s
-    
+
+# FIX 4: Use word boundary \ball\b and multiline |Civilization = parsing
 def check_fandom_availability(wikitext: str, civ: str) -> bool:
     if not civ or civ.lower() == "generic":
         return True
 
-    # 1. In Fandom wikitext, Infobox |Civilization = ...
-    m_civ = re.search(r"\|\s*Civilization\s*=\s*([^\r\n]+)", wikitext, re.I)
+    civ_pattern = "Maya|Mayans" if civ == "Mayans" else ("Inca|Incas" if civ == "Incas" else re.escape(civ))
+    ibox = extract_template(wikitext, "Infobox AoE2 unit") or extract_template(wikitext, "Infobox")
+    m_civ = re.search(r"\|\s*Civilization\s*=\s*(.*?)(?=\n\s*\||\n\s*\}\}|\Z)", ibox or wikitext, re.I | re.S)
     if m_civ:
         val = m_civ.group(1).split("<!--")[0].strip()
-        if "all" in val.lower():
+        if re.search(r"\ball\b", val, re.I):
             return True
-        civ_pattern = "Maya|Mayans" if civ == "Mayans" else ("Inca|Incas" if civ == "Incas" else re.escape(civ))
         if re.search(r"\b(?:" + civ_pattern + r")\b", val, re.I):
             return True
         if any(c in val for c in ["{{2icons|", "[["]) or any(re.search(r"\b" + re.escape(c) + r"\b", val, re.I) for c in CIVILIZATIONS if c != "Generic"):
             return False
-            
+
     # 2. In Fandom wikitext, {{Availability|...}} template
     m_avail = re.search(r"\{\{Availability\|([^}]+)\}\}", wikitext, re.I)
     if m_avail:
         val = m_avail.group(1)
-        if "all" in val.lower():
+        if re.search(r"\ball\b", val, re.I):
             return True
-        civ_pattern = "Maya|Mayans" if civ == "Mayans" else ("Inca|Incas" if civ == "Incas" else re.escape(civ))
         if re.search(r"\b(?:" + civ_pattern + r")\b", val, re.I):
             return True
         return False
@@ -461,24 +464,24 @@ def fetch_wiki_unit(unit_name: str, is_elite: bool = False):
                 "civs": tech_civ_restrictions.get(tok_clean.lower(), [])
             }
 
-    # BUG 3: Read full line for Civilization
+    # FIX 4 & FIX 7: Read multiline Civilization field and avoid false "all" matches in "allies"
     wiki_allowed_civs = []
     ibox_match = extract_template(content, "Infobox AoE2 unit") or extract_template(content, "Infobox")
     if ibox_match:
-        civ_m = re.search(r"\|\s*Civilization\s*=\s*([^\r\n]+)", ibox_match, re.I)
+        civ_m = re.search(r"\|\s*Civilization\s*=\s*(.*?)(?=\n\s*\||\n\s*\}\}|\Z)", ibox_match, re.I | re.S)
         if civ_m:
             c_val = civ_m.group(1).split("<!--")[0].strip()
-            if not any(k in c_val.lower() for k in ["see table", "all", "various"]):
+            if not any(re.search(r"\b" + re.escape(k) + r"\b", c_val, re.I) for k in ["see table", "all", "various"]):
                 parsed_c = re.findall(r"\{\{2icons\|([^}|]+)", c_val)
                 if not parsed_c:
-                  parsed_c = re.findall(r"\[\[([^|\]]+)(?:\|[^\]]+)?\]\]", c_val)
+                    parsed_c = re.findall(r"\[\[([^|\]]+)(?:\|[^\]]+)?\]\]", c_val)
                 if not parsed_c:
-                  parsed_c = [c for c in CIVILIZATIONS if c != "Generic" and re.search(r"\b" + re.escape(c) + r"\b", c_val, re.I)]
+                    parsed_c = [c for c in CIVILIZATIONS if c != "Generic" and re.search(r"\b" + re.escape(c) + r"\b", c_val, re.I)]
                 wiki_allowed_civs = [normalize_civ_name(c) for c in parsed_c if c.strip() and "allies" not in c.lower()]
 
     return content, boost_tech_str, parsed_techs, tech_civ_restrictions, wiki_allowed_civs
 
-# FIX 3, FIX 4, FIX 8, FIX 9: parse_unit
+# FIX 1, FIX 3, FIX 4, FIX 5, FIX 7: parse_unit
 def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
     norm = unit_name.lower()
     content, boost_tech_str, parsed_techs, tech_civ_restrictions, wiki_allowed_civs = fetch_wiki_unit(unit_name, is_elite=is_elite)
@@ -516,76 +519,84 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
 
     final_name = f"Elite {unit_name}" if is_elite else unit_name
 
+    # FIX 5 & FIX 7: Clean HTML tags/comments/refs and handle earliest age fallback
     def parse_stat(val):
-      if not val:
-          return None
-      val_str = str(val).replace("\u2212", "-").replace("\u2013", "-")
+        if not val:
+            return None
+        val_str = str(val).replace("\u2212", "-").replace("\u2013", "-")
+        val_str = re.sub(r"<!--.*?-->", "", val_str, flags=re.S)
+        val_str = re.sub(r"<ref[^>]*>.*?</ref>", "", val_str, flags=re.I | re.S)
+        val_str = re.sub(r"<ref[^/>]*/?>", "", val_str, flags=re.I)
 
-      # Clean File tags and image links
-      val_str = re.sub(r"\[\[File:[^\]]+\]\]", "", val_str, flags=re.I)
-      val_str = re.sub(r"\[\[(?:[^|\]]+\|)?([^\]]+)\]\]", r"\g<1>", val_str)
+        # Clean File tags and image links
+        val_str = re.sub(r"\[\[File:[^\]]+\]\]", "", val_str, flags=re.I)
+        val_str = re.sub(r"\[\[(?:[^|\]]+\|)?([^\]]+)\]\]", r"\g<1>", val_str)
 
-      # Clean tooltips with explicit backreference
-      val_str = re.sub(r"\{\{tt\|([^|]+)\|.*?\}\}", r"\g<1>", val_str)
+        # Clean tooltips with explicit backreference
+        val_str = re.sub(r"\{\{tt\|([^|]+)\|.*?\}\}", r"\g<1>", val_str)
 
-      # 1. Check inline age-dependent stats (only if not overridden by an Elite stat)
-      has_elite_override = is_elite and ("elite" in val_str.lower() or "," in val_str.split("}")[-1])
-      if not has_elite_override:
-          age_map = {1: "dark age", 2: "feudal age", 3: "castle age", 4: "imperial age"}
-          found_dict = {}
-          for m in re.finditer(r"(Dark Age|Feudal Age|Castle Age|Imperial Age)(?:\|[^}]*)?\}\}\s*([+-]?\d+(?:\.\d+)?)", val_str, re.I):
-              found_dict[m.group(1).lower()] = float(m.group(2))
-          for m in re.finditer(r"([+-]?\d+(?:\.\d+)?)\s*\([^)]*?(Dark Age|Feudal Age|Castle Age|Imperial Age)", val_str, re.I):
-              found_dict[m.group(2).lower()] = float(m.group(1))
-          if found_dict:
-              for a in range(age, 0, -1):
-                  if age_map[a] in found_dict:
-                      return found_dict[age_map[a]]
+        # 1. Check inline age-dependent stats (only if not overridden by an Elite stat)
+        has_elite_override = is_elite and ("elite" in val_str.lower() or "," in val_str.split("}")[-1])
+        if not has_elite_override:
+            age_map = {1: "dark age", 2: "feudal age", 3: "castle age", 4: "imperial age"}
+            found_dict = {}
+            for m in re.finditer(r"(Dark Age|Feudal Age|Castle Age|Imperial Age)(?:\|[^}]*)?\}\}\s*([+-]?\d+(?:\.\d+)?)", val_str, re.I):
+                found_dict[m.group(1).lower()] = float(m.group(2))
+            for m in re.finditer(r"([+-]?\d+(?:\.\d+)?)\s*\([^)]*?(Dark Age|Feudal Age|Castle Age|Imperial Age)", val_str, re.I):
+                found_dict[m.group(2).lower()] = float(m.group(1))
+            if found_dict:
+                for a in range(age, 0, -1):
+                    if age_map[a] in found_dict:
+                        return found_dict[age_map[a]]
+                for a in range(1, 5):
+                    if age_map[a] in found_dict:
+                        return found_dict[age_map[a]]
 
-      # 2. Check for multiline <br> segments (e.g. Castle / Imperial / Elite)
-      raw_segments = re.split(r"<br\s*/?>", val_str, flags=re.I)
-      segments = [
-          s for s in raw_segments
-          if not any(w in s.lower() for w in ["secondary", "additional", "extra", "projectile", "charge", "trample", "blast"])
-      ] or [raw_segments[0]]
-      if len(segments) > 1:
-          resolved = False
-          if is_elite:
-              elite_segs = [s for s in segments if "elite" in s.lower()]
-              if elite_segs:
-                  val_str = elite_segs[-1]
-                  resolved = True
-          if not resolved:
-              age_keywords = {1: ["dark"], 2: ["feudal"], 3: ["castle"], 4: ["imperial"]}
-              for a in range(age, 0, -1):
-                  keys = age_keywords[a]
-                  matched = [s for s in segments if any(k in s.lower() for k in keys) and "elite" not in s.lower()]
-                  if matched:
-                      val_str = matched[-1]
-                      resolved = True
-                      break
-          if not resolved:
-              val_str = segments[0]
-      else:
-          val_str = segments[0]
+        # 2. Check for multiline <br> segments (e.g. Castle / Imperial / Elite)
+        raw_segments = re.split(r"<br\s*/?>", val_str, flags=re.I)
+        segments = [
+            s for s in raw_segments
+            if not any(w in s.lower() for w in ["secondary", "additional", "extra", "projectile", "charge", "trample", "blast"])
+        ] or [raw_segments[0]]
+        if len(segments) > 1:
+            resolved = False
+            if is_elite:
+                elite_segs = [s for s in segments if "elite" in s.lower()]
+                if elite_segs:
+                    val_str = elite_segs[-1]
+                    resolved = True
+            if not resolved:
+                age_keywords = {1: ["dark"], 2: ["feudal"], 3: ["castle"], 4: ["imperial"]}
+                for a in range(age, 0, -1):
+                    keys = age_keywords[a]
+                    matched = [s for s in segments if any(k in s.lower() for k in keys) and "elite" not in s.lower()]
+                    if matched:
+                        val_str = matched[-1]
+                        resolved = True
+                        break
+            if not resolved:
+                val_str = segments[0]
+        else:
+            val_str = segments[0]
 
-      # 3. Split by comma for base vs elite
-      if "," in val_str:
-          parts = [p.strip() for p in val_str.split(",") if p.strip()]
-          if parts:
-              val_str = parts[-1] if is_elite else parts[0]
+        # 3. Split by comma for base vs elite
+        if "," in val_str:
+            parts = [p.strip() for p in val_str.split(",") if p.strip()]
+            if parts:
+                val_str = parts[-1] if is_elite else parts[0]
 
-      # 4. Strip <br />(\d+) <small> if present
-      br_match = re.search(r"<br\s*/?>([+-]?\d+)\s*<small>", val_str, re.I)
-      if br_match:
-          val_str = br_match.group(1)
+        # 4. Strip <br />(\d+) <small> if present
+        br_match = re.search(r"<br\s*/?>([+-]?\d+)\s*<small>", val_str, re.I)
+        if br_match:
+            val_str = br_match.group(1)
 
-      # 5. Strip templates like {{AoE2Icon|...}}, {{2icons|...}}
-      val_str = re.sub(r"\{\{[^}]+\}\}", "", val_str)
+        # 5. Strip templates like {{AoE2Icon|...}}, {{2icons|...}} and remaining HTML tags
+        val_str = re.sub(r"\{\{[^}]+\}\}", "", val_str)
+        val_str = re.sub(r"<[^>]+>", "", val_str)
 
-      # 6. Extract primary number (requires at least one digit)
-      num_match = re.search(r"([+-]?\d+(?:\.\d+)?)", str(val_str))
-      return float(num_match.group(1)) if num_match else 0.0
+        # 6. Extract primary number (requires at least one digit)
+        num_match = re.search(r"([+-]?\d+(?:\.\d+)?)", str(val_str))
+        return float(num_match.group(1)) if num_match else 0.0
 
     # Parse Cost
     food_cost = int(parse_stat(data.get("Food")) or 0)
@@ -639,9 +650,9 @@ def parse_unit(unit_name: str, is_elite: bool, age: int) -> Unit:
     if "jian swordsman" in norm and "unshielded" not in armor_class:
         armor_class.append("unshielded")
 
-    # FIX 8: Parse class armor resistance (Cataphract +12/+16, Condottiero +10) even with nested ({{Icon|Elite}})
+    # FIX 1: Fix typo [^r\n] -> [^\r\n] in class_resistance regex
     class_resistance = {}
-    for m_res in re.finditer(r"2class\|([^}|]+)\}\}(?:\s|<br\s*/?>)*\(([^r\n]*?[+-]?\d+[^r\n]*?)\)", class_str, re.I):
+    for m_res in re.finditer(r"2class\|([^}|]+)\}\}(?:\s|<br\s*/?>)*\(([^\r\n]*?[+-]?\d+[^\r\n]*?)\)", class_str, re.I):
         c_name = normalize_class_name(m_res.group(1))
         res_clean = re.sub(r"\{\{[^}]+\}\}", "", m_res.group(2))
         res_clean = re.sub(r"\([^)]*\)", "", res_clean)
@@ -694,7 +705,7 @@ def is_unit_available(civ: str, unit_name: str) -> tuple[bool, str]:
 
     return True, ""
 
-# FIX 1, FIX 3, FIX 4, FIX 5, FIX 8: compute_effective_stats
+# FIX 1, FIX 3, FIX 4, FIX 5, FIX 6, FIX 7: compute_effective_stats
 def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -> dict:
     norm_classes = [normalize_class_name(ac) for ac in u.armor_class]
     is_unique_unit = "unique unit" in norm_classes
@@ -740,13 +751,13 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
     if up.get("kataparuto") and "trebuchet" in u.name.lower():
         rof *= 0.75
     if up.get("caciques") and "infantry" in norm_classes:
-      rof *= 0.80
+        rof *= 0.80
 
-    # FIX 4: Skirmisher / Genitour & Melee Ratha Thumb Ring does NOT increase ROF
+    # FIX 4 & FIX 6: Skirmisher / Genitour & Melee hybrid Thumb Ring does NOT increase ROF
     if up.get("thumb_ring"):
         is_skirm_or_genitour = any(w in u.name.lower() for w in ["skirmisher", "genitour"])
-        is_melee_ratha = "ratha" in u.name.lower() and up.get("ratha_mode") == "Melee"
-        if not is_skirm_or_genitour and not is_melee_ratha:
+        is_melee_hybrid = ("ratha" in u.name.lower() or (u.p_attack is not None and u.m_attack is not None)) and up.get("ratha_mode") == "Melee"
+        if not is_skirm_or_genitour and not is_melee_hybrid:
             if any(c in norm_classes for c in ["cavalry archer"]):
                 rof *= 0.90
             elif any(c in norm_classes for c in ["archer"]):
@@ -755,11 +766,11 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
     p_atk = u.p_attack
     m_atk = u.m_attack
 
-    # FIX 4: Ratha Melee / Ranged mode switch
-    if "ratha" in u.name.lower():
+    # FIX 6: Combat mode switch for Ratha or any hybrid unit with both pierce and melee attacks
+    if "ratha" in u.name.lower() or (u.p_attack is not None and u.m_attack is not None):
         if up.get("ratha_mode") == "Melee":
             p_atk = None
-        else:
+        elif up.get("ratha_mode") == "Ranged":
             m_atk = None
 
     if p_atk is not None:
@@ -775,7 +786,8 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
                 p_atk += 2
             elif "scorpion" in u.name.lower():
                 p_atk += 4
-        if up.get("counterweights") and "trebuchet" in u.name.lower():
+        # FIX 3: Apply Counterweights to p_atk
+        if up.get("counterweights"):
             p_atk = int(p_atk * 1.15)
 
     if m_atk is not None:
@@ -789,6 +801,11 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
             m_atk += 4
         if up.get("farimba") and any(c in norm_classes for c in ["cavalry", "camel"]):
             m_atk += 5
+        # FIX 3: Apply Chemistry (+1) and Counterweights (+15%) to melee siege
+        if up.get("chemistry") and p_atk is None:
+            m_atk += 1
+        if up.get("counterweights"):
+            m_atk = int(m_atk * 1.15)
 
         # FIX 5: Lithuanian Relic Bonus (+1 per relic, up to +4)
         if up.get("relics", 0) > 0:
@@ -888,7 +905,7 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
         "bonus": active_bonus
     }
 
-# FIX 4, FIX 5, FIX 6, FIX 8: format_effective_stats
+# FIX 4, FIX 5, FIX 6, FIX 7, FIX 8: format_effective_stats
 def format_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -> str:
     eff = compute_effective_stats(u, civ, up, opponent)
     p_atk_str = str(eff["p_atk"]) if eff["p_atk"] is not None else "None"
@@ -917,9 +934,9 @@ def format_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -
         special.append(f"Multishot ({5 if getattr(u, 'elite', False) else 3} arrows)")
     if "kipchak" in u.name.lower():
         special.append(f"Multishot ({4 if getattr(u, 'elite', False) else 3} arrows)")
-    # FIX 4: Ratha mode indicator
-    if "ratha" in u.name.lower():
-        special.append(f"Ratha Mode: {up.get('ratha_mode', 'Ranged')}")
+    # FIX 6: Combat mode indicator for Ratha or hybrid units
+    if "ratha" in u.name.lower() or (u.p_attack is not None and u.m_attack is not None):
+        special.append(f"{u.name} Mode: {up.get('ratha_mode', 'Ranged')}")
     # FIX 5: Lithuanian Relics
     if up.get("relics", 0) > 0:
         special.append(f"Lithuanian Relics (+{up['relics']} Attack)")
@@ -938,8 +955,8 @@ def format_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -
     is_unique_unit = "unique unit" in norm_classes
     if up.get("thumb_ring"):
         is_skirm = any(w in u.name.lower() for w in ["skirmisher", "genitour"])
-        is_melee_ratha = "ratha" in u.name.lower() and up.get("ratha_mode") == "Melee"
-        if not is_skirm and not is_melee_ratha:
+        is_melee_hybrid = ("ratha" in u.name.lower() or (u.p_attack is not None and u.m_attack is not None)) and up.get("ratha_mode") == "Melee"
+        if not is_skirm and not is_melee_hybrid:
             rate_txt = "11% Faster Attack" if "cavalry archer" in norm_classes else "18% Faster Attack"
             special.append(f"Thumb Ring ({rate_txt})")
         elif is_skirm:
@@ -986,7 +1003,7 @@ Pierce Armor: {eff['p_arm']}
 Active Bonus Dmg vs Opponent: {bonus_str}
 Special Mechanics: {special_str}"""
 
-# FIX 6: Composite Bowman & Coustillier charge value in calculate_kill_trajectory
+# FIX 2, FIX 6: Composite Bowman & Coustillier charge value in calculate_kill_trajectory
 def calculate_kill_trajectory(attacker: Unit, defender: Unit, civ_att: str, civ_def: str, up_att: dict, up_def: dict, eff_att: dict, eff_def: dict) -> tuple[int, float, list[int]]:
     cur_hp = eff_def["hp"]
     hp_after_each_hit = []
@@ -1035,16 +1052,18 @@ def calculate_kill_trajectory(attacker: Unit, defender: Unit, civ_att: str, civ_
             extra = 3 if getattr(attacker, "elite", False) else 2
             dmg += extra * max(1, max(0, 3 - cur_target_p))
         if up_att.get("curare"):
-          dmg += 2
+            dmg += 2
 
         cur_hp -= dmg
         hp_after_each_hit.append(max(0, cur_hp))
         hits += 1
 
-        # Obuch armor shredding
+        # FIX 2: Prevent Obuch armor shredding from buffing negative armor (-3) up to 0
         if "obuch" in attacker.name.lower():
-            cur_target_m = max(0, cur_target_m - 1)
-            cur_target_p = max(0, cur_target_p - 1)
+            if cur_target_m > 0:
+                cur_target_m -= 1
+            if cur_target_p > 0:
+                cur_target_p -= 1
 
         if cur_hp <= 0:
             break
@@ -1158,7 +1177,7 @@ CAV_ARM_VALUES = {0: (0, 0), 1: (1, 1), 2: (2, 2), 3: (3, 4)}
 ARC_ARM_NAMES = {0: "None (+0/+0)", 1: "Padded Archer Armor (+1/+1)", 2: "Leather Archer Armor (+2/+2)", 3: "Ring Archer Armor (+3/+4)"}
 ARC_ARM_VALUES = {0: (0, 0), 1: (1, 1), 2: (2, 2), 3: (3, 4)}
 
-# FIX 1, FIX 2, FIX 4, FIX 5, FIX 7, FIX 8: render_unit_config
+# FIX 1, FIX 2, FIX 4, FIX 5, FIX 6, FIX 7, FIX 8: render_unit_config
 def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
     with col:
         st.subheader(f"Unit {side_idx}")
@@ -1227,11 +1246,9 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                 can_be_elite = True
             else:
                 elite_tag = f"elite {unit_name.lower()}"
-                # 1. Jeśli cywilizacja i jednostka Elite są znane w aoe2techtree, drzewko rozstrzyga ostatecznie
                 if civ in techtree and elite_tag in global_known_units:
                     can_be_elite = elite_tag in techtree[civ].get("units", set())
                 else:
-                    # 2. Tylko dla nowych cywilizacji/jednostek z DLC spoza aoe2techtree sprawdź Fandom Wiki
                     content, _, _, _, wiki_allowed_civs = fetch_wiki_unit(unit_name, is_elite=True)
                     if wiki_allowed_civs:
                         can_be_elite = civ in wiki_allowed_civs
@@ -1253,17 +1270,21 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                 key=f"age_{side_idx}"
             ) or 4
 
+        # FIX 6: Call parse_unit early right before combat mode switch
+        base_unit = parse_unit(unit_name, is_elite, age)
+
         upgrades = {}
 
-        # FIX 4: Ratha Combat Mode Switch
-        if unit_name == "Ratha":
-            ratha_mode = st.segmented_control(
-                "Ratha Combat Mode",
+        # FIX 6: Show combat mode switch for Ratha or any hybrid unit with both pierce and melee attacks
+        if unit_name == "Ratha" or (base_unit.p_attack is not None and base_unit.m_attack is not None):
+            mode_label = f"{unit_name} Combat Mode"
+            combat_mode = st.segmented_control(
+                mode_label,
                 options=["Ranged", "Melee"],
                 default="Ranged",
                 key=f"ratha_mode_{side_idx}"
             ) or "Ranged"
-            upgrades["ratha_mode"] = ratha_mode
+            upgrades["ratha_mode"] = combat_mode
 
         fu = st.checkbox("Fully Upgraded (FU)", key=f"fu_{side_idx}")
 
@@ -1278,7 +1299,6 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
             )
             upgrades["relics"] = relics if relics is not None else (4 if fu else 0)
 
-        base_unit = parse_unit(unit_name, is_elite, age)
         boost = base_unit.boost_tech.lower()
         tech_restrictions = getattr(base_unit, "tech_civ_restrictions", {})
 
@@ -1312,7 +1332,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
             elif "infantry" in u_norm_classes and "cavalry" not in u_norm_classes:
                 has_c_arm = False
 
-        # FIX 7: Unique techs only permitted for Generic or native civ
+        # FIX 7: Unique techs only permitted for Generic or native civ, with strict 4-space indentation
         def is_tech_permitted(tech_name: str, is_unique: bool = False) -> bool:
             t_clean = tech_name.strip().lower()
             if t_clean not in boost:
@@ -1323,10 +1343,10 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
                 return True
             # FIX 2: Do not block new patch technologies missing from aoe2techtree
             if t_clean in all_known_techs:
-              if civ in techtree and t_clean not in civ_techs:
-                  return False
-              if civ not in techtree and is_unique:
-                  return False
+                if civ in techtree and t_clean not in civ_techs:
+                    return False
+                if civ not in techtree and is_unique:
+                    return False
             if t_clean in tech_restrictions:
                 allowed_c = tech_restrictions[t_clean]
                 if allowed_c and civ not in allowed_c:
