@@ -1015,6 +1015,9 @@ Special Mechanics: {special_str}"""
 
 # FIX 2, FIX 6: Composite Bowman & Coustillier charge value in calculate_kill_trajectory
 def calculate_kill_trajectory(attacker: Unit, defender: Unit, civ_att: str, civ_def: str, up_att: dict, up_def: dict, eff_att: dict, eff_def: dict) -> tuple[int, float, list[int]]:
+    cur_hp = eff_def["hp"]
+    hp_after_each_hit = []
+
     p_atk = eff_att["p_atk"]
     m_atk = eff_att["m_atk"]
     is_p = p_atk is not None
