@@ -717,29 +717,29 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
     is_unique_unit = "unique unit" in norm_classes
 
     hp = u.hp
+    if civ == "Franks" and any(c in norm_classes for c in ["cavalry"]):
+        hp = int(hp * 1.2 + 1e-9)
+    elif civ == "Vikings" and not is_unique_unit and any(c in norm_classes for c in ["infantry"]):
+        hp = int(hp * 1.2 + 1e-9)
+    elif civ == "Turks" and not is_unique_unit and any(c in norm_classes for c in ["gunpowder unit"]):
+        hp = int(hp * 1.25 + 1e-9)
+    elif civ == "Saracens" and not is_unique_unit and any(c in norm_classes for c in ["camel"]):
+        hp = int(hp * 1.25 + 1e-9)
+    if (up.get("furor_celticus") or up.get("furor_celtica")) and ("siege" in str(u.armor_class).lower() or "trebuchet" in u.name.lower()):
+        hp = int(hp * 1.4 + 1e-9)
+
     if up.get("bloodlines"):
         hp += 20
     if up.get("loom") and "villager" in u.name.lower():
         hp += 15
     if up.get("supremacy") and "villager" in u.name.lower():
         hp += 40
-
-    if civ == "Franks" and any(c in norm_classes for c in ["cavalry"]):
-        hp = int(hp * 1.2)
-    elif civ == "Vikings" and not is_unique_unit and any(c in norm_classes for c in ["infantry"]):
-        hp = int(hp * 1.2)
-    elif civ == "Turks" and not is_unique_unit and any(c in norm_classes for c in ["gunpowder unit"]):
-        hp = int(hp * 1.25)
-    elif civ == "Saracens" and not is_unique_unit and any(c in norm_classes for c in ["camel"]):
-      hp = int(hp * 1.25)
     if up.get("sipahi"):
         hp += 20
     if up.get("el_dorado") and "eagle" in u.name.lower():
         hp += 40
     if up.get("chatras") and "battle elephant" in u.name.lower():
         hp += 100
-    if (up.get("furor_celticus") or up.get("furor_celtica")) and ("siege" in str(u.armor_class).lower() or "trebuchet" in u.name.lower()):
-        hp = int(hp * 1.4)
 
     rof = u.rof
     if civ == "Japanese" and not is_unique_unit and any(c in norm_classes for c in ["infantry"]):
@@ -762,7 +762,7 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
     # FIX 4 & FIX 6: Skirmisher / Genitour & Melee hybrid Thumb Ring does NOT increase ROF
     if up.get("thumb_ring"):
         is_skirm_or_genitour = any(w in u.name.lower() for w in ["skirmisher", "genitour"])
-        is_melee_hybrid = ("ratha" in u.name.lower() or (u.p_attack is not None and u.m_attack is not None)) and up.get("ratha_mode") == "Melee"
+        is_melee_hybrid = any(w in u.name.lower() for w in ["ratha", "hearth troop"]) and up.get("ratha_mode") == "Melee"
         if not is_skirm_or_genitour and not is_melee_hybrid:
             if any(c in norm_classes for c in ["cavalry archer"]):
                 rof *= 0.90
@@ -773,11 +773,11 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
     m_atk = u.m_attack
 
     # FIX 6: Combat mode switch for Ratha or any hybrid unit with both pierce and melee attacks
-    if "ratha" in u.name.lower() or (u.p_attack is not None and u.m_attack is not None):
-        if up.get("ratha_mode") == "Melee":
-            p_atk = None
-        elif up.get("ratha_mode") == "Ranged":
-            m_atk = None
+    if any(w in u.name.lower() for w in ["ratha", "hearth troop"]):
+      if up.get("ratha_mode") == "Melee":
+          p_atk = None
+      else:
+          m_atk = None
 
     if p_atk is not None:
         p_atk += up.get("r_atk_val", 0)
@@ -794,7 +794,7 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
                 p_atk += 4
         # FIX 3: Apply Counterweights to p_atk
         if up.get("counterweights"):
-            p_atk = int(p_atk * 1.15)
+          p_atk = int(p_atk * 1.15 + 1e-9)
 
     if m_atk is not None:
         m_atk += up.get("m_atk_val", 0)
@@ -811,7 +811,7 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
         if up.get("chemistry") and p_atk is None:
             m_atk += 1
         if up.get("counterweights"):
-            m_atk = int(m_atk * 1.15)
+          m_atk = int(m_atk * 1.15 + 1e-9)
 
         # FIX 5: Lithuanian Relic Bonus (+1 per relic, up to +4)
         if up.get("relics", 0) > 0:
@@ -895,11 +895,11 @@ def compute_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) 
                 active_bonus += max(0, effective_bonuses[opp_cls] - res_val)
 
         if civ == "Gurjaras" and any(c in norm_classes for c in ["cavalry", "camel", "elephant", "war elephant"]) and active_bonus > 0:
-            active_bonus = int(active_bonus * 1.4)
-
+            active_bonus = int(active_bonus * 1.4 + 1e-9)
+ 
         opp_norm_classes = [normalize_class_name(ac) for ac in opponent.armor_class]
         if getattr(opponent, "_civ", None) == "Sicilians" and not any(c in opp_norm_classes for c in ["siege weapon", "ship"]):
-            active_bonus = int(active_bonus * 0.67)
+            active_bonus = int(active_bonus * 0.67 + 1e-9)
 
     return {
         "hp": hp,
@@ -941,7 +941,7 @@ def format_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -
     if "kipchak" in u.name.lower():
         special.append(f"Multishot ({4 if getattr(u, 'elite', False) else 3} arrows)")
     # FIX 6: Combat mode indicator for Ratha or hybrid units
-    if "ratha" in u.name.lower() or (u.p_attack is not None and u.m_attack is not None):
+    if any(w in u.name.lower() for w in ["ratha", "hearth troop"]):
         special.append(f"{u.name} Mode: {up.get('ratha_mode', 'Ranged')}")
     # FIX 5: Lithuanian Relics
     if up.get("relics", 0) > 0:
@@ -957,11 +957,13 @@ def format_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -
         special.append("Kataparuto (33% Faster Attack & 4x Pack Speed)")
     if up.get("warwolf"):
         special.append("Warwolf (100% Blast Damage)")
+    if up.get("counterweights"):
+      special.append("Counterweights (+15% Attack)")
     norm_classes = [normalize_class_name(ac) for ac in u.armor_class]
     is_unique_unit = "unique unit" in norm_classes
     if up.get("thumb_ring"):
         is_skirm = any(w in u.name.lower() for w in ["skirmisher", "genitour"])
-        is_melee_hybrid = ("ratha" in u.name.lower() or (u.p_attack is not None and u.m_attack is not None)) and up.get("ratha_mode") == "Melee"
+        is_melee_hybrid = any(w in u.name.lower() for w in ["ratha", "hearth troop"]) and up.get("ratha_mode") == "Melee"
         if not is_skirm and not is_melee_hybrid:
             rate_txt = "11% Faster Attack" if "cavalry archer" in norm_classes else "18% Faster Attack"
             special.append(f"Thumb Ring ({rate_txt})")
@@ -988,7 +990,7 @@ def format_effective_stats(u: Unit, civ: str, up: dict, opponent: Unit = None) -
     if civ == "Malians" and not is_unique_unit and "infantry" in norm_classes:
         special.append("+3 Infantry Pierce Armor")
     if civ == "Gurjaras" and any(c in norm_classes for c in ["cavalry", "camel", "elephant", "war elephant"]):
-      special.append("+40% Mounted Bonus Damage")
+        special.append("+40% Mounted Bonus Damage")
     if civ == "Saracens" and not is_unique_unit and "camel" in norm_classes:
       special.append("+25% Camel HP")
     if u.name in SUICIDE_UNITS:
@@ -1013,11 +1015,10 @@ Special Mechanics: {special_str}"""
 
 # FIX 2, FIX 6: Composite Bowman & Coustillier charge value in calculate_kill_trajectory
 def calculate_kill_trajectory(attacker: Unit, defender: Unit, civ_att: str, civ_def: str, up_att: dict, up_def: dict, eff_att: dict, eff_def: dict) -> tuple[int, float, list[int]]:
-    cur_hp = eff_def["hp"]
-    hp_after_each_hit = []
-
-    is_p = eff_att["p_atk"] is not None
-    atk = eff_att["p_atk"] if is_p else eff_att["m_atk"]
+    p_atk = eff_att["p_atk"]
+    m_atk = eff_att["m_atk"]
+    is_p = p_atk is not None
+    is_m = m_atk is not None
     bonus = eff_att["bonus"]
     rof = eff_att["rof"]
 
@@ -1026,19 +1027,21 @@ def calculate_kill_trajectory(attacker: Unit, defender: Unit, civ_att: str, civ_
 
     hits = 0
 
-    if atk is None or atk <= 0:
+    if not is_p and not is_m:
         return 999, 999.0, [cur_hp]
 
     while cur_hp > 0 and hits < 4000:
-        target_arm = cur_target_p if is_p else cur_target_m
-        if not is_p and ("leitis" in attacker.name.lower() or up_att.get("wootz_steel")):
-            target_arm = 0
-        # FIX 6: Composite Bowman ignores enemy pierce armor
-        elif is_p and "composite bowman" in attacker.name.lower():
-            target_arm = 0
+        eff_p_arm = 0 if (is_p and "composite bowman" in attacker.name.lower()) else cur_target_p
+        eff_m_arm = 0 if (is_m and ("leitis" in attacker.name.lower() or up_att.get("wootz_steel"))) else cur_target_m
 
-        # Exact AoE2 Damage Formula: max(1, max(0, atk - target_arm) + bonus)
-        dmg = max(1, max(0, atk - target_arm) + bonus)
+        base_dmg = 0
+        if is_p:
+            base_dmg += max(0, p_atk - eff_p_arm)
+        if is_m:
+            base_dmg += max(0, m_atk - eff_m_arm)
+
+        # Exact AoE2 Damage Formula: max(1, base_dmg + bonus)
+        dmg = max(1, base_dmg + bonus)
 
         # Charge attacks on hit 1
         if hits == 0:
@@ -1280,11 +1283,12 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
 
         # FIX 6: Call parse_unit early right before combat mode switch
         base_unit = parse_unit(unit_name, is_elite, age)
+        base_unit._civ = civ
 
         upgrades = {}
 
-        # FIX 6: Show combat mode switch for Ratha or any hybrid unit with both pierce and melee attacks
-        if unit_name == "Ratha" or (base_unit.p_attack is not None and base_unit.m_attack is not None):
+        # FIX 6: Show combat mode switch only for true mode-switching units (Ratha, Hearth Troop)
+        if any(w in unit_name.lower() for w in ["ratha", "hearth troop"]):
             mode_label = f"{unit_name} Combat Mode"
             combat_mode = st.segmented_control(
                 mode_label,
@@ -1616,7 +1620,7 @@ def render_unit_config(col, side_idx: int, default_civ: str, default_unit: str):
             if has_greek_fire:
                 upgrades["greek_fire"] = st.checkbox("Greek Fire (+1 Fire Ship Range)", key=f"gf_{side_idx}")
             if has_counterweights:
-                upgrades["counterweights"] = st.checkbox("Counterweights (+15% Trebuchet Attack)", key=f"cw_{side_idx}")
+                upgrades["counterweights"] = st.checkbox("Counterweights (+15% Siege Attack)", key=f"cw_{side_idx}")
             if has_curare:
                 upgrades["curare"] = st.checkbox("Curare (Poison damage)", key=f"cur_{side_idx}")
             if has_caciques:
